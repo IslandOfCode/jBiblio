@@ -179,7 +179,7 @@ public class StatsWorker extends SwingWorker<Object, Object> {
 	private static Map<String, Object> populateBooksList(){
 		boolean everyBook = false;
 		Map<String, Object> radix = new HashMap<>();
-		List<Book> books = DBManager.getBooksAsList(everyBook);
+		List<Book> books = DBManager.getAllBooksAsList(everyBook);
 		
 		int numOfBooks = (everyBook)?DBManager.countTotalRow("Books"):DBManager.countBookAvailable();
 		

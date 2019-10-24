@@ -199,18 +199,19 @@ public class EditBook extends JFrame implements IRemoteUpdate{
 					JOptionPane.showMessageDialog(contentPane, "Campi come ISBN, titolo e collocazione DEVONO essere compilati.", "Campi mancanti!", JOptionPane.WARNING_MESSAGE);
 					return;
 				}
+				
+				if(DBManager.checkBookAlreadyPresent(TXT_collocation.getText().trim().toUpperCase())) {
+					JOptionPane.showMessageDialog(contentPane, "Questa collocazione è già presente nel database.", "Libro già presente", JOptionPane.WARNING_MESSAGE);
+					return;
+				}
+				
 				if(MODE==BOOKMODE.ADD) {
-					
-					if(DBManager.checkISBNAlreadyPresent(TXT_ISBN.getText().trim())) {
-						JOptionPane.showMessageDialog(contentPane, "Questo ISBN è già presente nel database.", "Libro già presente", JOptionPane.WARNING_MESSAGE);
-						return;
-					}
-					
 					book = retriveDataFromForm();
 					DBManager.addNewBook(book);
-					Logger.info("Nuovo libro aggiunto, ISBN:"+book.getISBN());
+					Logger.info("Nuovo libro aggiunto, ISBN:"+book.getISBN() + " COLLOCAZIONE:"+book.getCollocation());
 				} else { //EDIT
 					Book bookUpdate = retriveDataFromForm();
+					
 					if(!book.equals(bookUpdate)) {
 						DBManager.updateBook(book.getISBN(), bookUpdate);
 						JOptionPane.showMessageDialog(contentPane, "Libro aggiornato", "Aggiornamento", JOptionPane.INFORMATION_MESSAGE);
@@ -247,10 +248,10 @@ public class EditBook extends JFrame implements IRemoteUpdate{
 			return;
 		}
 
-		if(DBManager.checkISBNAlreadyPresent(TXT_ISBN.getText().trim())) {
+		/*if(DBManager.checkISBNAlreadyPresent(TXT_ISBN.getText().trim())) {
 			JOptionPane.showMessageDialog(contentPane, "Questo ISBN è già presente nel database.", "Libro già presente", JOptionPane.WARNING_MESSAGE);
 			return;
-		}
+		}*/
 		
 		try {
 			int r = JOptionPane.showConfirmDialog(contentPane, "<html>Questa operazione sovrascrive le informazioni già inserite.<br/>Vuoi davvero continuare?</html>", "ATTENZIONE!", JOptionPane.OK_CANCEL_OPTION);
@@ -280,13 +281,13 @@ public class EditBook extends JFrame implements IRemoteUpdate{
 		}
 		
 		return new Book(
-				this.TXT_ISBN.getText(),
-				this.TXT_bookTitle.getText(),
-				this.TXT_bookAuthor.getText(),
-				this.TXT_bookPublisher.getText(),
-				this.TXT_bookDate.getText(),
+				this.TXT_ISBN.getText().trim(),
+				this.TXT_bookTitle.getText().trim(),
+				this.TXT_bookAuthor.getText().trim(),
+				this.TXT_bookPublisher.getText().trim(),
+				this.TXT_bookDate.getText().trim(),
 				thumb,
-				this.TXT_collocation.getText(),
+				this.TXT_collocation.getText().trim().toUpperCase(),
 				removed
 				);
 	}

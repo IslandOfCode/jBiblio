@@ -25,10 +25,10 @@ public class Settings {
 	 * Durata del prestito, in giorni.
 	 */
 	public static final int DEFAULT_DURATA_PRESTITO = 15;
-	public static final String DEFAULT_TITOLO_RESPONSABILE = "Curatore";
+	public static final String DEFAULT_TITOLO_RESPONSABILE = "Referente";
 	
-	public static final int[] DURATE = {7,15,30};
-	public static final String[] TITOLI = {"Responsabile", "Curatore", "Curatrice", "Insegnante", "Sig.", "Sig.ra", "Dott.", "Dott.sa"};
+	public static final int[] DURATE = {7,10,15,30};
+	public static final String[] TITOLI = {"Referente", "Responsabile", "Curatore", "Curatrice", "Insegnante", "Sig.", "Sig.ra", "Dott.", "Dott.sa"};
 	
 	static final String FILENAME = "pref.properties";
 	

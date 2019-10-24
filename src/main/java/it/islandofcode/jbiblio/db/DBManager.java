@@ -44,7 +44,8 @@ public class DBManager {
 	public static final void initDB() {		
 		String URL = "jdbc:sqlite:"+DBFILEPATH+DBFILENAME;
 
-		String BOOKS = "CREATE TABLE `Books` ( `ISBN` TEXT NOT NULL UNIQUE, `title` TEXT, `author` TEXT, `publisher` TEXT, `publishdate` TEXT, `thumbnail` TEXT, `collocation` TEXT, `removed` INTEGER NOT NULL DEFAULT 0 );";
+		//String BOOKS = "CREATE TABLE `Books` ( `ISBN` TEXT NOT NULL UNIQUE, `title` TEXT, `author` TEXT, `publisher` TEXT, `publishdate` TEXT, `thumbnail` TEXT, `collocation` TEXT, `removed` INTEGER NOT NULL DEFAULT 0 );";
+		String BOOKS = "CREATE TABLE `Books` ( `ISBN` TEXT NOT NULL, `title` TEXT, `author` TEXT, `publisher` TEXT, `publishdate` TEXT, `thumbnail` TEXT, `collocation` TEXT NOT NULL UNIQUE, `removed` INTEGER NOT NULL DEFAULT 0 );";
 		String CLIENTS = "CREATE TABLE `Clients` ( `ID` INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, `nome` TEXT, `cognome` TEXT, `classe` INTEGER, `sezione` TEXT, `removed` INTEGER NOT NULL DEFAULT 0 );";
 		String LOANS = "CREATE TABLE \"Loans\" ( `ID` INTEGER PRIMARY KEY AUTOINCREMENT, `client` INTEGER, `dataS` TEXT, `dataE` TEXT, `dataR` TEXT, `returned` INTEGER NOT NULL DEFAULT 0, FOREIGN KEY(`client`) REFERENCES `Clients`(`ID`) )";
 		String BOOKLOANED = "CREATE TABLE `BookLoaned` ( `loanID` INTEGER NOT NULL, `bookISBN` TEXT NOT NULL, FOREIGN KEY(`loanID`) REFERENCES `Loans`(`ID`), FOREIGN KEY(`bookISBN`) REFERENCES `Books`(`ISBN`) )";
@@ -342,7 +343,7 @@ public class DBManager {
 	 * @param flag
 	 * @return
 	 */
-	public static List<Book> getBooksAsList(boolean AllBook){
+	public static List<Book> getAllBooksAsList(boolean AllBook){
 		ArrayList<Book> L = new ArrayList<>();
 		
 		String sql = "SELECT * FROM Books";
@@ -406,12 +407,79 @@ public class DBManager {
 		return null;
 	}
 	
+	public static List<Book> getBookListByISBN(String iSBN) {
+		ArrayList<Book> L = new ArrayList<>();
+		String sql = "SELECT * FROM Books WHERE ISBN=?";
+		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+			// set the value
+			pstmt.setString(1, iSBN);
+			
+			ResultSet rs = pstmt.executeQuery();
+
+			// loop through the result set
+			while(rs.next()) {
+
+				L.add( new Book(
+						rs.getString("ISBN"),
+						rs.getString("title"),
+						rs.getString("author"),
+						rs.getString("publisher"),
+						rs.getString("publishdate"),
+						rs.getString("thumbnail"),
+						rs.getString("collocation"),
+						rs.getInt("removed")
+						)
+					);
+
+			}
+			if(!L.isEmpty())
+				return L;
+			
+		} catch (SQLException e) {
+			Logger.error(e);
+		}
+		return null;
+	}
+	
 	public static Book getBookByCollocation(String collocation) {
 		String sql = "SELECT * FROM Books WHERE collocation=?";
 		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
 			// set the value
 			pstmt.setString(1, collocation);
+			
+			ResultSet rs = pstmt.executeQuery();
+
+			// loop through the result set
+			if(rs.next()) {
+
+				return new Book(
+						rs.getString("ISBN"),
+						rs.getString("title"),
+						rs.getString("author"),
+						rs.getString("publisher"),
+						rs.getString("publishdate"),
+						rs.getString("thumbnail"),
+						rs.getString("collocation"),
+						rs.getInt("removed")
+						);
+
+			}
+			
+		} catch (SQLException e) {
+			Logger.error(e);
+		}
+		return null;
+	}
+	
+	public static Book getThatPreciseBook(String ISBN, String collocation) {
+		String sql = "SELECT * FROM Books WHERE ISBN=? and collocation=?";
+		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+			// set the value
+			pstmt.setString(1, ISBN);
+			pstmt.setString(2, collocation);
 			
 			ResultSet rs = pstmt.executeQuery();
 
@@ -512,16 +580,16 @@ public class DBManager {
 	}
 	
 	/**
-	 * Ritorna TRUE se il libro indicato dall'ISBN passato come parametro è già presente
+	 * Ritorna TRUE se il libro indicato dalla collocazione passata come parametro è già presente
 	 * nel database. FALSE altrimenti.
 	 * @param ISBN
 	 * @return boolean
 	 */
-	public static boolean checkISBNAlreadyPresent(String ISBN) {
-		String sql = "SELECT ISBN FROM Books WHERE ISBN=?";
+	public static boolean checkBookAlreadyPresent(String collocation) {
+		String sql = "SELECT ISBN FROM Books WHERE Collocation=?";
 		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-			pstmt.setString(1, ISBN);
+			pstmt.setString(1, collocation);
 			
 			ResultSet rs = pstmt.executeQuery();
 

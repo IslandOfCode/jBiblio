@@ -260,14 +260,21 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 	private void searchAction() {
 
 		Book B;
-		if(!TXT_ISBN.getText().trim().isEmpty())
+		if(!TXT_ISBN.getText().trim().isEmpty() || !TXT_collocation.getText().trim().isEmpty()) {
+			B = DBManager.getThatPreciseBook(TXT_ISBN.getText().trim(), TXT_collocation.getText().trim().toUpperCase());
+		} else {
+			JOptionPane.showMessageDialog(contentPane, "Entrambi i campi sono necessari per la ricerca.", "Attenzione!", JOptionPane.WARNING_MESSAGE);	
+			return;
+		}
+		
+		/*
 			B = DBManager.getBookByISBN(TXT_ISBN.getText().trim());
 		else if (!TXT_collocation.getText().trim().isEmpty())
 			B = DBManager.getBookByCollocation(TXT_collocation.getText().trim().toUpperCase());
 		else {
 			JOptionPane.showMessageDialog(contentPane, "Uno dei due campi è necessario per la ricerca.", "Attenzione!", JOptionPane.WARNING_MESSAGE);	
 			return;
-		}
+		}*/
 		
 		if(B==null) {
 			JOptionPane.showMessageDialog(contentPane, "Nessun libro corrispondente trovato!", "Attenzione!", JOptionPane.WARNING_MESSAGE);
@@ -307,7 +314,7 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 			// verifica sia ISBN
 			if (Pattern.matches("^(97(8|9))?\\d{9}(\\d|X)$", msg.trim())) {
 				TXT_ISBN.setText(msg.trim());
-				searchAction();
+				//searchAction();
 				Logger.debug("Lanciata ricerca con " + msg);
 			} else {
 				JOptionPane.showMessageDialog(contentPane, "Ricevuto valore non ISBN.", "Dati errati!",
