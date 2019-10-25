@@ -326,7 +326,6 @@ public class GUI implements IRemoteUpdate{
 		M_stats.add(M_printBookList);
 		
 		JMenuItem M_printGenericStats = new JMenuItem("Genera statistiche");
-		M_printGenericStats.setEnabled(false);
 		M_printGenericStats.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				String basePath = System.getProperty("user.home") + "/Desktop";

@@ -10,7 +10,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
@@ -118,6 +120,145 @@ public class DBManager {
 	
 	public static int countActiveLoans() {
 		return DBManager.countTotalRow("Loans", "Loans.returned=0");
+	}
+	
+	/**
+	 * Quanti prestiti in ritardo per l'anno indicato
+	 * @param year
+	 * @return
+	 */
+	public static int countLateLoanYear(int year) {
+		String yy = String.format("%04d", year);
+		return DBManager.countTotalRow("Loans", "Loans.returned=1 and strftime('%Y', Loans.dataS) = '"+yy+"' and (julianday(Loans.dataR)-julianday(Loans.dataE))>0");
+	}
+	
+	public static int countResolvedLoans() {
+		return DBManager.countTotalRow("Loans", "Loans.returned=1");
+	}
+	
+	public static int countActiveClient() {
+		return DBManager.countTotalRow("Clients", "Clients.removed=0");
+	}
+	
+	public static int countLoanMonthYear(int month, int year) {
+		
+		if(month<1 || month>12)
+			return -1;
+		
+		String mm = String.format("%02d", month);
+		String yy = String.format("%04d", year);
+		
+		return DBManager.countTotalRow("Loans", "strftime('%m-%Y', Loans.dataS) = '"+mm+"-"+yy+"'");
+	}
+	
+	public static int countLoanYear(int year) {
+		return DBManager.countTotalRow("Loans", "strftime('%Y', Loans.dataS) = '"+String.format("%04d", year)+"'");
+	}
+	
+	public static Map<String, Integer> top10Book(int year){
+		HashMap<String, Integer> ret = new HashMap<>();
+		String yy = String.format("%04d", year);		
+		String sql = "select count(BookLoaned.bookISBN) as HOWMANY, Books.ISBN, Books.title, Loans.dataS from BookLoaned inner join Books on BookLoaned.bookISBN=Books.ISBN inner join Loans on BookLoaned.loanID = Loans.ID where strftime('%Y', Loans.dataS) = ? group by bookISBN order by count(bookISBN) desc limit 10;";
+		
+		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+			// set the value
+			pstmt.setString(1, yy);
+			
+			ResultSet rs = pstmt.executeQuery();
+
+			// loop through the result set
+			while(rs.next()) {
+				ret.put(rs.getString("title"),rs.getInt("HOWMANY"));
+			}
+			
+		} catch (SQLException e) {
+			Logger.error(e);
+		}
+
+		return ret;
+	}
+	
+	public static Map<String, Integer> top10Class(int year){
+		HashMap<String, Integer> ret = new HashMap<>();
+		String yy = String.format("%04d", year);		
+		String sql = "select count(Loans.ID) as HOWMANY, (Clients.classe||Clients.sezione) as CLASSE from Loans inner join Clients on Clients.ID=Loans.client where strftime('%Y', Loans.dataS) = ? group by (Clients.classe||Clients.sezione) order by count(Loans.ID) desc limit 10;";
+		
+		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+			// set the value
+			pstmt.setString(1, yy);
+			
+			ResultSet rs = pstmt.executeQuery();
+
+			// loop through the result set
+			while(rs.next()) {
+				ret.put(rs.getString("CLASSE"),rs.getInt("HOWMANY"));
+			}
+			
+		} catch (SQLException e) {
+			Logger.error(e);
+		}
+
+		return ret;
+	}
+	
+	/**
+	 * Media dei giorni di prestito per l'anno indicato.
+	 * Per i prestiti in ritardo, viene considerato l'intervallo inizio-fine prestito. I giorni in ritardo
+	 * non vengono considerati.
+	 * @param year
+	 * @return
+	 */
+	public static float averageLoanDuration(int year) {
+		String yy = String.format("%04d", year);
+		String sql = "select avg(case when (julianday(Loans.dataR)>julianday(Loans.dataE)) = 1 then (julianday(Loans.dataE)-julianday(Loans.dataS)) else (julianday(Loans.dataR)-julianday(Loans.dataS)) end ) as MEDIA from Loans where strftime('%Y', Loans.dataS) = ?";
+		
+		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+			// set the value
+			pstmt.setString(1, yy);
+			
+			ResultSet rs = pstmt.executeQuery();
+
+			// loop through the result set
+			if(rs.next()) {
+				return rs.getFloat("MEDIA");
+			}
+			
+		} catch (SQLException e) {
+			Logger.error(e);
+		}
+
+		return -1f;
+	}
+	
+	/**
+	 * Media dei giorni di ritardo, ovviamente calcolata tra i soli prestiti in ritardo.
+	 * @param year
+	 * @return
+	 */
+	public static float averageLoanLateDays(int year) {
+		String yy = String.format("%04d", year);
+		String sql = "select avg(julianday(Loans.dataR)-julianday(Loans.dataE)) as MEDIA, count() from Loans where strftime('%Y', Loans.dataS) = ? and (julianday(Loans.dataR)>julianday(Loans.dataE)) = 1";
+		
+		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+			// set the value
+			pstmt.setString(1, yy);
+			
+			ResultSet rs = pstmt.executeQuery();
+
+			// loop through the result set
+			if(rs.next()) {
+				return rs.getFloat("MEDIA");
+			}
+			
+		} catch (SQLException e) {
+			Logger.error(e);
+		}
+
+		return -1f;
 	}
 	
 	/**

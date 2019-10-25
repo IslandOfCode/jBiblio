@@ -259,14 +259,11 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 	
 	private void searchAction() {
 
-		Book B;
-		if(!TXT_ISBN.getText().trim().isEmpty() || !TXT_collocation.getText().trim().isEmpty()) {
-			B = DBManager.getThatPreciseBook(TXT_ISBN.getText().trim(), TXT_collocation.getText().trim().toUpperCase());
-		} else {
+		if(TXT_ISBN.getText().trim().isEmpty() || TXT_collocation.getText().trim().isEmpty()) {
 			JOptionPane.showMessageDialog(contentPane, "Entrambi i campi sono necessari per la ricerca.", "Attenzione!", JOptionPane.WARNING_MESSAGE);	
 			return;
 		}
-		
+		Book B = DBManager.getThatPreciseBook(TXT_ISBN.getText().trim(), TXT_collocation.getText().trim().toUpperCase());
 		/*
 			B = DBManager.getBookByISBN(TXT_ISBN.getText().trim());
 		else if (!TXT_collocation.getText().trim().isEmpty())
@@ -278,6 +275,11 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 		
 		if(B==null) {
 			JOptionPane.showMessageDialog(contentPane, "Nessun libro corrispondente trovato!", "Attenzione!", JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+		
+		if(B.isRemoved()) {
+			JOptionPane.showMessageDialog(contentPane, "Il libro non è più disponibile", "Attenzione!", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
 		

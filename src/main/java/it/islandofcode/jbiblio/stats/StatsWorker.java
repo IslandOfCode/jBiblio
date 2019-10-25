@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -192,8 +193,71 @@ public class StatsWorker extends SwingWorker<Object, Object> {
 	}
 	
 	private static Map<String, Object> populateStatistics(){
+		Map<String, Object> radix = new HashMap<>();
 		
-		return null;
+		radix.put("totLibri", DBManager.countTotalRow("Books"));
+		radix.put("totClienti", DBManager.countTotalRow("Clients"));
+		radix.put("totPrestiti", DBManager.countTotalRow("Loans"));
+		radix.put("totLibriPrestati", DBManager.countTotalRow("BookLoaned"));
+		
+		radix.put("totLibriPresenti", DBManager.countBookAvailable());
+		radix.put("totClientiAttivi", DBManager.countActiveClient());
+		radix.put("totPrestitiRisolti", DBManager.countResolvedLoans());
+		
+		int year = LocalDate.now().getYear();
+		
+		radix.put("AS2", String.valueOf(year));
+		radix.put("AS1", String.valueOf(year-1));
+		
+		//TODO sostituisci con ciclo e array nome mese
+		radix.put("prestitiGEN", DBManager.countLoanMonthYear(1,year));
+		radix.put("prestitiFEB", DBManager.countLoanMonthYear(2,year));
+		radix.put("prestitiMAR", DBManager.countLoanMonthYear(3,year));
+		radix.put("prestitiAPR", DBManager.countLoanMonthYear(4,year));
+		radix.put("prestitiMAG", DBManager.countLoanMonthYear(5,year));
+		radix.put("prestitiGIU", DBManager.countLoanMonthYear(6,year));
+		radix.put("prestitiLUG", DBManager.countLoanMonthYear(7,year));
+		radix.put("prestitiAGO", DBManager.countLoanMonthYear(8,year));
+		radix.put("prestitiSET", DBManager.countLoanMonthYear(9,year));
+		radix.put("prestitiOTT", DBManager.countLoanMonthYear(10,year));
+		radix.put("prestitiNOV", DBManager.countLoanMonthYear(11,year));
+		radix.put("prestitiDEC", DBManager.countLoanMonthYear(12,year));
+		
+		radix.put("totPrestitiAnnoCorrente", DBManager.countLoanYear(year));
+		
+		ArrayList<String> TB = new ArrayList<>();
+		Map<String, Integer> tbm = DBManager.top10Book(year);
+		int i = 0;
+		for(String T : tbm.keySet()) {
+			TB.add(i, "<i>"+T+"</i> [prestato <b>"+tbm.get(T)+"</b> volte]");
+			i++;
+		}
+		if(i<9) { //se meno di 10, aggiungi vuoti
+			for(int j=i; j<10; j++) {
+				TB.add(j, "<i>nd</i>");
+			}
+		}
+		radix.put("topLibri",TB);
+		
+		ArrayList<String> TC = new ArrayList<>();
+		Map<String, Integer> tcm = DBManager.top10Class(year);
+		i = 0;
+		for(String T : tcm.keySet()) {
+			TC.add(i, T.toUpperCase()+" [<b>"+tcm.get(T)+"</b> prestiti]");
+			i++;
+		}
+		if(i<9) { //se meno di 10, aggiungi vuoti
+			for(int j=i; j<10; j++) {
+				TC.add(j, "<i>nd</i>");
+			}
+		}
+		radix.put("topClassi",TC);
+		
+		radix.put("avgDurataPrestito", DBManager.averageLoanDuration(year));
+		radix.put("avgRitardo", DBManager.averageLoanLateDays(year));
+		radix.put("totPrestitiRitardo", DBManager.countLateLoanYear(year));
+		
+		return radix;
 	}
 
 }
