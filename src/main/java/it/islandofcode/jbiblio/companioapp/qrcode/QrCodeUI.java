@@ -68,7 +68,7 @@ public class QrCodeUI extends JFrame implements IRemoteUpdate{
 		try {
 			if(HTTPH!=null) {
 				HTTPH.registerUI(REGISTER_MODE.CONNECTION, QrCodeUI.this);
-				QrCode qr0 = QrCode.encodeText("http://"+HTTPH.getIP()+":"+HTTPH.getPort(), QrCode.Ecc.LOW);
+				QrCode qr0 = QrCode.encodeText("http://"+HTTPH.getIP()+":"+HttpHandler.PORT, QrCode.Ecc.LOW);
 				L_qrcode.setIcon(new ImageIcon(qr0.toImage(10, 4)));
 			} else 
 				throw new IOException("Server web non attivo.");
@@ -104,6 +104,6 @@ public class QrCodeUI extends JFrame implements IRemoteUpdate{
 
 	@Override
 	public String getRegisterId() {
-		return this.getTitle();
+		return "QRCODEUI_frame";
 	}
 }

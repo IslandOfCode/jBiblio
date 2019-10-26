@@ -16,6 +16,7 @@ import java.util.List;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -31,6 +32,7 @@ import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
+import javax.swing.Timer;
 import javax.swing.border.MatteBorder;
 import javax.swing.table.DefaultTableModel;
 
@@ -69,6 +71,8 @@ public class GUI implements IRemoteUpdate{
 	
 	public HttpHandler HTTPH;
 	
+	private final JDialog HttpInitWaitDialog;
+	
 	private List<String> openFrames = new ArrayList<>();
 	
 
@@ -76,6 +80,18 @@ public class GUI implements IRemoteUpdate{
 	 * Create the application.
 	 */
 	public GUI() {
+		final JOptionPane optionPane = new JOptionPane("Attendi l'inizializzazione del server.", JOptionPane.INFORMATION_MESSAGE, JOptionPane.DEFAULT_OPTION, null, new Object[]{}, null);
+		HttpInitWaitDialog = new JDialog();
+		HttpInitWaitDialog.setTitle("Companion App server");
+		HttpInitWaitDialog.setModal(true);
+
+		HttpInitWaitDialog.setContentPane(optionPane);
+
+		HttpInitWaitDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+		HttpInitWaitDialog.setAlwaysOnTop(true);
+		HttpInitWaitDialog.setLocationRelativeTo(FRAME);
+		HttpInitWaitDialog.pack();
+		
 		initialize();
 		
 		populateHomePage();
@@ -150,22 +166,47 @@ public class GUI implements IRemoteUpdate{
 		MI_connectApp = new JMenuItem("Connetti App");
 		MI_connectApp.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				
+				if(!MI_connectApp.getText().contains("Connetti App")) {
+					HTTPH.unregisterAll();
+					HTTPH.stop();
+					HTTPH=null;
+					appStatusNotification(STATUS.DISCONNECTED);
+					return;
+				}
+				
 				try {
 					if(HTTPH!=null)
 						HTTPH.stop();
-					HTTPH = new HttpHandler(6339);
-					HTTPH.start();
+					HTTPH = new HttpHandler();
 				} catch (IOException e1) {
 					Logger.error(e1);
 					JOptionPane.showMessageDialog(FRAME, "<html>Errore creazione server!<br/><center><code>"+e1.getMessage(), "Attenzione!", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 				
-				HTTPH.registerUI(REGISTER_MODE.CONNECTION, GUI.this);
-				
-				QrCodeUI QRUI = new QrCodeUI(HTTPH);
-				QRUI.setVisible(true);
-				Logger.debug("QrCodeUI visible");
+				/*
+				 * Pare che spark necessiti di almeno un secondo tra uno stop e uno start.
+				 * Quando si invoca Spark.stop(), viene lanciato un thread che rimane in attesa il tempo necessario
+				 * affinchè jetty (che viene usato per gestire i server embedded) chiuda e ripulisca route e quant'altro.
+				 * Viene visualizzata una piccola finestra che viene chiusa al termine dell'attesa. 
+				 */
+				Timer workaround = new Timer(1500, new ActionListener() {
+					public void actionPerformed(ActionEvent evt) {
+						HTTPH.start();
+						HTTPH.registerUI(REGISTER_MODE.CONNECTION, GUI.this);
+						
+						QrCodeUI QRUI = new QrCodeUI(HTTPH);
+						//metto qui così si chiude la dialog e si apre la QRUI quasi in contemporanea
+						HttpInitWaitDialog.dispose();
+						QRUI.setVisible(true);
+						Logger.debug("QrCodeUI visible");
+					}
+				});
+
+				workaround.setRepeats(false);
+				workaround.start();
+				HttpInitWaitDialog.setVisible(true);
 			}
 		});
 		MI_connectApp.setIcon(new ImageIcon(GUI.class.getResource("/icon/remote.png")));
@@ -505,13 +546,15 @@ public class GUI implements IRemoteUpdate{
 	public void appStatusNotification(STATUS status) {
 
 		if(STATUS.CONNECTED.equals(status)) {
-			MI_connectApp.setEnabled(false);
+			MI_connectApp.setText("Scollega App");
+			//MI_connectApp.setEnabled(false);
 			L_appStatus.setText(APP_STATUS_CONNECTED);
 			
 			Logger.debug("GUI RECEIVED A CONNECT NOTIFICATION");
 			
 		} else if (STATUS.DISCONNECTED.equals(status)){
-			MI_connectApp.setEnabled(true);
+			MI_connectApp.setText("Connetti App");
+			//MI_connectApp.setEnabled(true);
 			L_appStatus.setText(APP_STATUS_NOT_CONNECTED);
 			
 			/*
