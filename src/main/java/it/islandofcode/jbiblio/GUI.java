@@ -108,12 +108,10 @@ public class GUI implements IRemoteUpdate{
 			@Override
 			public void windowClosing(WindowEvent e) {
 				int r = JOptionPane.showConfirmDialog(FRAME, "Sei sicuro di voler uscire dal programma?", "Conferma", JOptionPane.YES_NO_OPTION);
-				if(r==JOptionPane.YES_OPTION) {
+				if(r==JOptionPane.YES_OPTION) {		
+					Logger.info("HttpHandler in chiusura...");
+					HttpHandler.getInstance().stop();
 					
-					if(HttpHandler.isIstanced()) {
-						Logger.info("HttpHandler in chiusura...");
-						HttpHandler.getInstance().stop();
-					}
 					Logger.info("CHIUSURA JBIBLIO");
 					System.exit(0);
 				}
@@ -173,8 +171,7 @@ public class GUI implements IRemoteUpdate{
 					return;
 				}
 				
-				if(HttpHandler.isIstanced())
-					HttpHandler.getInstance().stop();
+				HttpHandler.getInstance().stop();
 				
 				/*
 				 * Pare che spark necessiti di almeno un secondo tra uno stop e uno start.
@@ -187,11 +184,9 @@ public class GUI implements IRemoteUpdate{
 						HttpHandler.getInstance().start();
 						HttpHandler.getInstance().registerUI(REGISTER_MODE.CONNECTION, GUI.this);
 						
-						QrCodeUI QRUI = new QrCodeUI();
 						//metto qui così si chiude la dialog e si apre la QRUI quasi in contemporanea
 						HttpInitWaitDialog.dispose();
-						QRUI.setVisible(true);
-						Logger.debug("QrCodeUI visible");
+						new QrCodeUI();
 					}
 				});
 
@@ -234,8 +229,7 @@ public class GUI implements IRemoteUpdate{
 		MI_newLoan.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, KeyEvent.CTRL_DOWN_MASK));
 		MI_newLoan.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				SearchClient S = new SearchClient();
-				S.setMode(SearchClient.AFTERSEARCH.LOAN, GUI.this);
+				new SearchClient(SearchClient.AFTERSEARCH.LOAN, GUI.this);
 			}
 		});
 		M_inventory.add(MI_newLoan);
@@ -270,8 +264,7 @@ public class GUI implements IRemoteUpdate{
 		MI_newBook.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, KeyEvent.CTRL_DOWN_MASK));
 		MI_newBook.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				EditBook E = new EditBook();
-				E.SetMode(EditBook.BOOKMODE.ADD, "", GUI.this);
+				new EditBook(EditBook.BOOKMODE.ADD, "", GUI.this);
 			}
 		});
 		M_inventory.add(MI_newBook);
@@ -280,8 +273,7 @@ public class GUI implements IRemoteUpdate{
 		MI_editBook.setIcon(new ImageIcon(GUI.class.getResource("/icon/cerca.png")));
 		MI_editBook.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				SearchBook S = new SearchBook();
-				S.setMode(SearchBook.AFTERSEARCH.EDIT, GUI.this);
+				new SearchBook(SearchBook.AFTERSEARCH.EDIT, GUI.this);
 			}
 		});
 		M_inventory.add(MI_editBook);
@@ -290,8 +282,7 @@ public class GUI implements IRemoteUpdate{
 		MI_removeBook.setIcon(new ImageIcon(GUI.class.getResource("/icon/elimina.png")));
 		MI_removeBook.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				SearchBook S = new SearchBook();
-				S.setMode(SearchBook.AFTERSEARCH.DELETE, GUI.this);
+				new SearchBook(SearchBook.AFTERSEARCH.DELETE, GUI.this);
 			}
 		});
 		M_inventory.add(MI_removeBook);
@@ -306,8 +297,7 @@ public class GUI implements IRemoteUpdate{
 		MI_newClient.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, KeyEvent.CTRL_DOWN_MASK));
 		MI_newClient.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				EditClient C = new EditClient();
-				C.setMode(EditClient.CLIENTMODE.ADD, -1, GUI.this);
+				new EditClient(EditClient.CLIENTMODE.ADD, -1, GUI.this);
 			}
 		});
 		M_inventory.add(MI_newClient);
@@ -316,8 +306,7 @@ public class GUI implements IRemoteUpdate{
 		MI_editClient.setIcon(new ImageIcon(GUI.class.getResource("/icon/cerca.png")));
 		MI_editClient.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				SearchClient S = new SearchClient();
-				S.setMode(SearchClient.AFTERSEARCH.EDIT, GUI.this);
+				new SearchClient(SearchClient.AFTERSEARCH.EDIT, GUI.this);
 			}
 		});
 		M_inventory.add(MI_editClient);
@@ -325,8 +314,7 @@ public class GUI implements IRemoteUpdate{
 		JMenuItem MI_removeClient = new JMenuItem("Elimina Cliente");
 		MI_removeClient.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				SearchClient S = new SearchClient();
-				S.setMode(SearchClient.AFTERSEARCH.DELETE, GUI.this);
+				new SearchClient(SearchClient.AFTERSEARCH.DELETE, GUI.this);
 			}
 		});
 		MI_removeClient.setIcon(new ImageIcon(GUI.class.getResource("/icon/elimina.png")));

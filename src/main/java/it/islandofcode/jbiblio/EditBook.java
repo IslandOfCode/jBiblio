@@ -54,44 +54,14 @@ public class EditBook extends JFrame implements IRemoteUpdate{
 	private BOOKMODE MODE;
 	private Book book;
 	
-	private GUI parent;
-	
-	
-	public void SetMode(BOOKMODE mode, String ID, GUI parent) {
-		this.parent = parent;
-		if(HttpHandler.isIstanced())
-			HttpHandler.getInstance().registerUI(REGISTER_MODE.INPUT_DATA, this);
-		
-		this.MODE = mode;
-
-		switch(MODE) {
-		case ADD:
-			this.setTitle("Aggiungi nuovo libro");
-			B_addBook.setText("Aggiungi libro");
-			break;
-		case EDIT:
-			book = DBManager.getBookByISBN(ID);
-			
-			populateForm();
-			
-			this.setTitle("Modifica libro");
-			B_addBook.setText("Modifica libro");
-			break;
-		}
-		
-		parent.signalFrameOpened(getTitle());
-		this.setVisible(true);
-	}
-
 	/**
 	 * Create the frame.
 	 */
-	public EditBook() {
+	public EditBook(BOOKMODE mode, String ID, GUI parent) {
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
-				if(HttpHandler.isIstanced())
-					HttpHandler.getInstance().unregisterUI(EditBook.this);
+				HttpHandler.getInstance().unregisterUI(EditBook.this);
 				parent.signalFrameClosed(getTitle());
 				dispose();
 			}
@@ -219,8 +189,7 @@ public class EditBook extends JFrame implements IRemoteUpdate{
 					Logger.warn("nessun aggiornamento effetturato ["+book.hashCode()+"]=["+bookUpdate.hashCode()+"]");
 				}
 				
-				if(HttpHandler.isIstanced())
-					HttpHandler.getInstance().unregisterUI(EditBook.this);
+				HttpHandler.getInstance().unregisterUI(EditBook.this);
 				parent.signalFrameClosed(getTitle());
 				dispose();
 			}
@@ -238,6 +207,30 @@ public class EditBook extends JFrame implements IRemoteUpdate{
 		L_thumbnail.setHorizontalAlignment(SwingConstants.CENTER);
 		L_thumbnail.setBounds(0, 0, 168, 187);
 		P_thumbnail.add(L_thumbnail);
+		
+		
+
+		HttpHandler.getInstance().registerUI(REGISTER_MODE.INPUT_DATA, this);
+		
+		this.MODE = mode;
+
+		switch(MODE) {
+		case ADD:
+			this.setTitle("Aggiungi nuovo libro");
+			B_addBook.setText("Aggiungi libro");
+			break;
+		case EDIT:
+			book = DBManager.getBookByISBN(ID);
+			
+			populateForm();
+			
+			this.setTitle("Modifica libro");
+			B_addBook.setText("Modifica libro");
+			break;
+		}
+		
+		parent.signalFrameOpened(getTitle());
+		this.setVisible(true);
 	}
 
 	private void searchAction() {

@@ -40,28 +40,14 @@ public class HttpHandler {
 	}
 	
 	public static final int PORT = 6339;
-	private String IP;
+	public static final String PROTOCOL = "http";
+	private String IP = "";
 	
 	private String CLIENT = "";
-	private ConcurrentHashMap<IRemoteUpdate, REGISTER_MODE> registered = new ConcurrentHashMap<>();
+	private ConcurrentHashMap<IRemoteUpdate, REGISTER_MODE> registered;
 
 	private HttpHandler() {
-		
-		this.IP = "";
-		try (final DatagramSocket dtgrm = new DatagramSocket()) {
-			dtgrm.connect(InetAddress.getByName("8.8.8.8"), 10002);
-			this.IP = dtgrm.getLocalAddress().getHostAddress().replace("/", "");
-		} catch (SocketException | UnknownHostException e) {
-			Logger.debug(e);
-		}
-		//pare che si ottenga l'ip anche se il server è offline o non raggiungibile!
-		//quindi questo controllo è inutile, tranne se la jvm nega le operazioni di rete
-		//oppure se la scheda di rete è disabilitata
-		if(IP==null || IP.isEmpty() || IP.length()<7) { //7 è il minimo numero di caratteri in una stringa IP 1.3.5.7
-			IP = "127.0.0.1";
-		}
-		
-		Logger.info("HTTPHANDLER istanziato (ma non avviato) su URL: http://" + IP + ":" +PORT);
+		registered = new ConcurrentHashMap<>();
 	}
 	
 	public static HttpHandler getInstance(){
@@ -69,10 +55,6 @@ public class HttpHandler {
 			instance = new HttpHandler();
 		}
 		return instance;
-	}
-	
-	public static boolean isIstanced() {
-		return instance!=null;
 	}
 
 	public void registerUI(REGISTER_MODE mode, IRemoteUpdate UI) {
@@ -118,22 +100,31 @@ public class HttpHandler {
 		return null;
 	}
 	
-	public boolean isSomeoneConnected() {
-		//return clients.size()>0;
+	public boolean isClientConnected() {
 		return (CLIENT!=null) && !CLIENT.isEmpty();
 	}	
 	
-	public String getIP() {
-		return this.IP;
+	public String getServerURL() throws IllegalStateException{
+		if(IP.isEmpty())
+			throw new IllegalStateException("Il server non è stato ancora avviato!");
+		return PROTOCOL+"://"+IP+":"+PORT;
 	}
 
 	public void start() {
-		try {
-			Thread.sleep(1500);
-		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+		this.IP = "";
+		try (final DatagramSocket dtgrm = new DatagramSocket()) {
+			dtgrm.connect(InetAddress.getByName("8.8.8.8"), 10002);
+			this.IP = dtgrm.getLocalAddress().getHostAddress().replace("/", "");
+		} catch (SocketException | UnknownHostException e) {
+			Logger.debug(e);
 		}
+		//pare che si ottenga l'ip anche se il server è offline o non raggiungibile!
+		//quindi questo controllo è inutile, tranne se la jvm nega le operazioni di rete
+		//oppure se la scheda di rete è disabilitata
+		if(IP==null || IP.isEmpty() || IP.length()<7) { //7 è il minimo numero di caratteri in una stringa IP 1.3.5.7
+			IP = "127.0.0.1";
+		}
+		
 		initExceptionHandler((e) -> Logger.error(e));
 
 		ipAddress(IP);
@@ -188,27 +179,16 @@ public class HttpHandler {
 			}
 		});
 
-		Logger.info("HttpHandler avviato.");
+		Logger.info("HTTPHANDLER avviato su URL: http://" + IP + ":" +PORT);
 	}
 	
 	public void stop() {
 		Logger.debug("SERVER STOP REQUESTED");
-		Spark.stop();
-		instance = null;
-	}
-	/*
-	private boolean checkIfClientConnected(String uuid) {
-		if(uuid==null || uuid.trim().isEmpty())
-			return false;
-		for(String S : clients) {
-			if(S.equals(uuid.trim())) {
-				Logger.debug("TROVATO : " +uuid);
-				return true;
-			}
+		if(!IP.isEmpty()) {
+			Spark.stop();
+			IP = "";
+			Logger.debug("\tStop actually called!");
 		}
-		Logger.debug("NON trovato : " +uuid);
-		return false;
 	}
-	*/
 
 }

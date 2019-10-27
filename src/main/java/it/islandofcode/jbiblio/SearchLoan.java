@@ -73,8 +73,7 @@ public class SearchLoan extends JFrame implements IRemoteUpdate{
 			public void windowClosing(WindowEvent e) {
 				Logger.debug("FRAME ["+getTitle()+"] IN CHIUSURA");
 				parent.signalFrameClosed(getTitle());
-				if(HttpHandler.isIstanced())
-					HttpHandler.getInstance().unregisterUI(SearchLoan.this);
+				HttpHandler.getInstance().unregisterUI(SearchLoan.this);
 				e.getWindow().dispose();
 			}
 		});
@@ -175,8 +174,7 @@ public class SearchLoan extends JFrame implements IRemoteUpdate{
 		B_close.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				parent.signalFrameClosed(getTitle());
-				if(HttpHandler.isIstanced())
-					HttpHandler.getInstance().unregisterUI(SearchLoan.this);
+				HttpHandler.getInstance().unregisterUI(SearchLoan.this);
 				dispose();
 			}
 		});
@@ -229,8 +227,7 @@ public class SearchLoan extends JFrame implements IRemoteUpdate{
 		P_command.add(B_view);
 		P_command.add(B_close);
 		
-		if(HttpHandler.isIstanced())
-			HttpHandler.getInstance().registerUI(REGISTER_MODE.INPUT_DATA, this);
+		HttpHandler.getInstance().registerUI(REGISTER_MODE.INPUT_DATA, this);
 		
 		parent.signalFrameOpened(getTitle());
 		this.setVisible(true);

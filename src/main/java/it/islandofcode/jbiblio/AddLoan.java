@@ -63,14 +63,12 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
-				if(HttpHandler.isIstanced())
-					HttpHandler.getInstance().unregisterUI(AddLoan.this);
+				HttpHandler.getInstance().unregisterUI(AddLoan.this);
 				dispose();
 			}
 		});
 		
-		if(HttpHandler.isIstanced())
-			HttpHandler.getInstance().registerUI(REGISTER_MODE.INPUT_DATA, this);
+		HttpHandler.getInstance().registerUI(REGISTER_MODE.INPUT_DATA, this);
 		
 		this.client = C;
 		searched = new ArrayList<Book>();
@@ -216,8 +214,7 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 		ConfirmLoan CL = new ConfirmLoan(loan.getID());
 		CL.setVisible(true);
 		
-		if(HttpHandler.isIstanced())
-			HttpHandler.getInstance().unregisterUI(AddLoan.this);
+		HttpHandler.getInstance().unregisterUI(AddLoan.this);
 		this.dispose();
 	}
 	
