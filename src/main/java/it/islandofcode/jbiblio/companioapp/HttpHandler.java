@@ -7,9 +7,10 @@ import static spark.Spark.ipAddress;
 import static spark.Spark.notFound;
 import static spark.Spark.port;
 
-import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -20,14 +21,12 @@ import spark.Spark;
 
 public class HttpHandler {
 	
+	private static HttpHandler instance = null;
+	
 	public static final String URI_CONNECT = "connect";
-	
-	public static final String PARAM_DISCONNECT = "disconnect";
-	
-	public static final String PARAM_ISBN = "isbn";
-	
+	public static final String URI_DISCONNECT = "disconnect";
 	public static final String URI_PING = "ping";
-	
+	public static final String PARAM_ISBN = "isbn";
 	public static final String PARAM_KEY = "key";
 	
 	private static final String RESPONSE_ERROR = "ERROR";
@@ -36,9 +35,6 @@ public class HttpHandler {
 	private static final String RESPONSE_POSITIVE_DISCONNECTION = "BYE";
 	private static final String RESPONSE_PONG = "PONG";
 	
-	private static final String[] DNS_SVR_ADDR = {"8.8.8.8","8.8.4.4","1.1.1.1"};
-	
-
 	public static enum REGISTER_MODE {
 		CONNECTION, INPUT_DATA
 	}
@@ -46,30 +42,37 @@ public class HttpHandler {
 	public static final int PORT = 6339;
 	private String IP;
 	
-	//private List<String> clients = new ArrayList<>();
 	private String CLIENT = "";
-
 	private ConcurrentHashMap<IRemoteUpdate, REGISTER_MODE> registered = new ConcurrentHashMap<>();
 
-	public HttpHandler() throws IOException {
+	private HttpHandler() {
 		
 		this.IP = "";
-		int i = 0;
-		while (IP.isEmpty()) {
-			Logger.debug("TEST REMOTE DNS :" + DNS_SVR_ADDR[i]);
-			try (final DatagramSocket dtgrm = new DatagramSocket()) {
-				dtgrm.connect(InetAddress.getByName(DNS_SVR_ADDR[i]), 10002);
-				this.IP = dtgrm.getLocalAddress().getHostAddress().replace("/", "");
-			}
-			i++;
+		try (final DatagramSocket dtgrm = new DatagramSocket()) {
+			dtgrm.connect(InetAddress.getByName("8.8.8.8"), 10002);
+			this.IP = dtgrm.getLocalAddress().getHostAddress().replace("/", "");
+		} catch (SocketException | UnknownHostException e) {
+			Logger.debug(e);
 		}
-		
-		//Se tutti i server sono offline.
-		if(IP==null || IP.isEmpty()) {
-			throw new IOException("Missing external IP");
+		//pare che si ottenga l'ip anche se il server è offline o non raggiungibile!
+		//quindi questo controllo è inutile, tranne se la jvm nega le operazioni di rete
+		//oppure se la scheda di rete è disabilitata
+		if(IP==null || IP.isEmpty() || IP.length()<7) { //7 è il minimo numero di caratteri in una stringa IP 1.3.5.7
+			IP = "127.0.0.1";
 		}
 		
 		Logger.info("HTTPHANDLER istanziato (ma non avviato) su URL: http://" + IP + ":" +PORT);
+	}
+	
+	public static HttpHandler getInstance(){
+		if(instance==null) {
+			instance = new HttpHandler();
+		}
+		return instance;
+	}
+	
+	public static boolean isIstanced() {
+		return instance!=null;
 	}
 
 	public void registerUI(REGISTER_MODE mode, IRemoteUpdate UI) {
@@ -191,6 +194,7 @@ public class HttpHandler {
 	public void stop() {
 		Logger.debug("SERVER STOP REQUESTED");
 		Spark.stop();
+		instance = null;
 	}
 	/*
 	private boolean checkIfClientConnected(String uuid) {

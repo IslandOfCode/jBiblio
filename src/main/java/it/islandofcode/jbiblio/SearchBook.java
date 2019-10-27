@@ -51,12 +51,10 @@ public class SearchBook extends JFrame implements IRemoteUpdate{
 	private JTable resultTable;
 	
 	private GUI parent;
-	private HttpHandler HTTPH;
 	
-	public void setMode(AFTERSEARCH mode, HttpHandler httph, GUI parent) {
+	public void setMode(AFTERSEARCH mode, GUI parent) {
 		
 		this.parent = parent;
-		this.HTTPH = httph;
 		
 		switch(mode) {
 		case EDIT:
@@ -72,8 +70,8 @@ public class SearchBook extends JFrame implements IRemoteUpdate{
 		
 		parent.signalFrameOpened(getTitle());
 		
-		if(HTTPH!=null)
-			HTTPH.registerUI(REGISTER_MODE.INPUT_DATA, this);
+		if(HttpHandler.isIstanced())
+			HttpHandler.getInstance().registerUI(REGISTER_MODE.INPUT_DATA, this);
 		
 		this.setVisible(true);
 	}
@@ -163,7 +161,7 @@ public class SearchBook extends JFrame implements IRemoteUpdate{
 					}
 					
 					EditBook E = new EditBook();
-					E.SetMode(EditBook.BOOKMODE.EDIT, ISBN, HTTPH, parent);
+					E.SetMode(EditBook.BOOKMODE.EDIT, ISBN, parent);
 					//EB.setVisible(true);
 				}
 			}

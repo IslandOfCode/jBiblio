@@ -69,7 +69,7 @@ public class GUI implements IRemoteUpdate{
 	private JMenuItem MI_connectApp;
 	private JLabel L_appStatus;
 	
-	public HttpHandler HTTPH;
+	//public HttpHandler HTTPH;
 	
 	private final JDialog HttpInitWaitDialog;
 	
@@ -110,11 +110,10 @@ public class GUI implements IRemoteUpdate{
 				int r = JOptionPane.showConfirmDialog(FRAME, "Sei sicuro di voler uscire dal programma?", "Conferma", JOptionPane.YES_NO_OPTION);
 				if(r==JOptionPane.YES_OPTION) {
 					
-					if(HTTPH!=null) {
+					if(HttpHandler.isIstanced()) {
 						Logger.info("HttpHandler in chiusura...");
-						HTTPH.stop();
+						HttpHandler.getInstance().stop();
 					}
-
 					Logger.info("CHIUSURA JBIBLIO");
 					System.exit(0);
 				}
@@ -168,22 +167,14 @@ public class GUI implements IRemoteUpdate{
 			public void actionPerformed(ActionEvent e) {
 				
 				if(!MI_connectApp.getText().contains("Connetti App")) {
-					HTTPH.unregisterAll();
-					HTTPH.stop();
-					HTTPH=null;
+					HttpHandler.getInstance().unregisterAll();
+					HttpHandler.getInstance().stop();
 					appStatusNotification(STATUS.DISCONNECTED);
 					return;
 				}
 				
-				try {
-					if(HTTPH!=null)
-						HTTPH.stop();
-					HTTPH = new HttpHandler();
-				} catch (IOException e1) {
-					Logger.error(e1);
-					JOptionPane.showMessageDialog(FRAME, "<html>Errore creazione server!<br/><center><code>"+e1.getMessage(), "Attenzione!", JOptionPane.ERROR_MESSAGE);
-					return;
-				}
+				if(HttpHandler.isIstanced())
+					HttpHandler.getInstance().stop();
 				
 				/*
 				 * Pare che spark necessiti di almeno un secondo tra uno stop e uno start.
@@ -193,10 +184,10 @@ public class GUI implements IRemoteUpdate{
 				 */
 				Timer workaround = new Timer(1500, new ActionListener() {
 					public void actionPerformed(ActionEvent evt) {
-						HTTPH.start();
-						HTTPH.registerUI(REGISTER_MODE.CONNECTION, GUI.this);
+						HttpHandler.getInstance().start();
+						HttpHandler.getInstance().registerUI(REGISTER_MODE.CONNECTION, GUI.this);
 						
-						QrCodeUI QRUI = new QrCodeUI(HTTPH);
+						QrCodeUI QRUI = new QrCodeUI();
 						//metto qui così si chiude la dialog e si apre la QRUI quasi in contemporanea
 						HttpInitWaitDialog.dispose();
 						QRUI.setVisible(true);
@@ -244,7 +235,7 @@ public class GUI implements IRemoteUpdate{
 		MI_newLoan.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				SearchClient S = new SearchClient();
-				S.setMode(SearchClient.AFTERSEARCH.LOAN, GUI.this, HTTPH);
+				S.setMode(SearchClient.AFTERSEARCH.LOAN, GUI.this);
 			}
 		});
 		M_inventory.add(MI_newLoan);
@@ -263,7 +254,7 @@ public class GUI implements IRemoteUpdate{
 		JMenuItem MI_searchLoan = new JMenuItem("Cerca prestiti");
 		MI_searchLoan.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				new SearchLoan(GUI.this, HTTPH);
+				new SearchLoan(GUI.this);
 			}
 		});
 		MI_searchLoan.setIcon(new ImageIcon(GUI.class.getResource("/icon/cerca.png")));
@@ -280,7 +271,7 @@ public class GUI implements IRemoteUpdate{
 		MI_newBook.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				EditBook E = new EditBook();
-				E.SetMode(EditBook.BOOKMODE.ADD, "", HTTPH, GUI.this);
+				E.SetMode(EditBook.BOOKMODE.ADD, "", GUI.this);
 			}
 		});
 		M_inventory.add(MI_newBook);
@@ -290,7 +281,7 @@ public class GUI implements IRemoteUpdate{
 		MI_editBook.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				SearchBook S = new SearchBook();
-				S.setMode(SearchBook.AFTERSEARCH.EDIT, HTTPH, GUI.this);
+				S.setMode(SearchBook.AFTERSEARCH.EDIT, GUI.this);
 			}
 		});
 		M_inventory.add(MI_editBook);
@@ -300,7 +291,7 @@ public class GUI implements IRemoteUpdate{
 		MI_removeBook.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				SearchBook S = new SearchBook();
-				S.setMode(SearchBook.AFTERSEARCH.DELETE, HTTPH, GUI.this);
+				S.setMode(SearchBook.AFTERSEARCH.DELETE, GUI.this);
 			}
 		});
 		M_inventory.add(MI_removeBook);
@@ -326,7 +317,7 @@ public class GUI implements IRemoteUpdate{
 		MI_editClient.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				SearchClient S = new SearchClient();
-				S.setMode(SearchClient.AFTERSEARCH.EDIT, GUI.this, HTTPH);
+				S.setMode(SearchClient.AFTERSEARCH.EDIT, GUI.this);
 			}
 		});
 		M_inventory.add(MI_editClient);
@@ -335,7 +326,7 @@ public class GUI implements IRemoteUpdate{
 		MI_removeClient.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				SearchClient S = new SearchClient();
-				S.setMode(SearchClient.AFTERSEARCH.DELETE, GUI.this, HTTPH);
+				S.setMode(SearchClient.AFTERSEARCH.DELETE, GUI.this);
 			}
 		});
 		MI_removeClient.setIcon(new ImageIcon(GUI.class.getResource("/icon/elimina.png")));
@@ -547,25 +538,13 @@ public class GUI implements IRemoteUpdate{
 
 		if(STATUS.CONNECTED.equals(status)) {
 			MI_connectApp.setText("Scollega App");
-			//MI_connectApp.setEnabled(false);
 			L_appStatus.setText(APP_STATUS_CONNECTED);
 			
 			Logger.debug("GUI RECEIVED A CONNECT NOTIFICATION");
 			
 		} else if (STATUS.DISCONNECTED.equals(status)){
 			MI_connectApp.setText("Connetti App");
-			//MI_connectApp.setEnabled(true);
 			L_appStatus.setText(APP_STATUS_NOT_CONNECTED);
-			
-			/*
-			 * Attenzione, questo codice fa impazzire jbiblio
-			 * Sono arrivato a creare 2,4GB di file di log in 2 secondi
-			 */
-			
-			/*while(HTTPH!=null && !HTTPH.isSomeoneConnected()) {
-				HTTPH.stop();
-			}
-			HTTPH = null;*/
 			
 			Logger.debug("GUI RECEIVED A DISCONNECT NOTIFICATION");
 		} else {

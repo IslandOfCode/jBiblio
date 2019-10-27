@@ -9,7 +9,6 @@ import javax.swing.table.DefaultTableModel;
 import org.tinylog.Logger;
 
 import it.islandofcode.jbiblio.artefact.Client;
-import it.islandofcode.jbiblio.companioapp.HttpHandler;
 import it.islandofcode.jbiblio.db.DBManager;
 
 import javax.swing.JScrollPane;
@@ -50,12 +49,10 @@ public class SearchClient extends JFrame {
 	private JButton B_createLoan;
 	
 	private GUI parent;
-	private HttpHandler HTTPH;
 	
 	
-	public void setMode(AFTERSEARCH mode, GUI parent, HttpHandler HTTPH) {
+	public void setMode(AFTERSEARCH mode, GUI parent) {
 		this.parent = parent;
-		this.HTTPH = HTTPH;
 		
 		switch(mode) {
 		case EDIT:
@@ -223,7 +220,7 @@ public class SearchClient extends JFrame {
 						return;
 					}
 					
-					AddLoan AL = new AddLoan(C, HTTPH);
+					AddLoan AL = new AddLoan(C);
 					AL.setVisible(true);
 				}
 

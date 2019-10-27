@@ -54,15 +54,13 @@ public class EditBook extends JFrame implements IRemoteUpdate{
 	private BOOKMODE MODE;
 	private Book book;
 	
-	private HttpHandler SVR;
 	private GUI parent;
 	
 	
-	public void SetMode(BOOKMODE mode, String ID, HttpHandler svr, GUI parent) {
+	public void SetMode(BOOKMODE mode, String ID, GUI parent) {
 		this.parent = parent;
-		this.SVR = svr;
-		if(SVR!=null)
-			SVR.registerUI(REGISTER_MODE.INPUT_DATA, this);
+		if(HttpHandler.isIstanced())
+			HttpHandler.getInstance().registerUI(REGISTER_MODE.INPUT_DATA, this);
 		
 		this.MODE = mode;
 
@@ -92,8 +90,8 @@ public class EditBook extends JFrame implements IRemoteUpdate{
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
-				if(SVR!=null)
-					SVR.unregisterUI(EditBook.this);
+				if(HttpHandler.isIstanced())
+					HttpHandler.getInstance().unregisterUI(EditBook.this);
 				parent.signalFrameClosed(getTitle());
 				dispose();
 			}
@@ -221,8 +219,8 @@ public class EditBook extends JFrame implements IRemoteUpdate{
 					Logger.warn("nessun aggiornamento effetturato ["+book.hashCode()+"]=["+bookUpdate.hashCode()+"]");
 				}
 				
-				if(SVR!=null)
-					SVR.unregisterUI(EditBook.this);
+				if(HttpHandler.isIstanced())
+					HttpHandler.getInstance().unregisterUI(EditBook.this);
 				parent.signalFrameClosed(getTitle());
 				dispose();
 			}

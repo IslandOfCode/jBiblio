@@ -24,21 +24,18 @@ public class QrCodeUI extends JFrame implements IRemoteUpdate{
 	private JPanel contentPane;
 	
 	private JLabel L_qrcode;
-	
-	private HttpHandler HTTPH;
 
 	/**
 	 * Create the frame.
 	 */
-	public QrCodeUI(HttpHandler ht) {
+	public QrCodeUI() {
 		setAlwaysOnTop(true);
-		this.HTTPH = ht;
 		
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
-				if(HTTPH!=null && (!HTTPH.isSomeoneConnected()) ) {
-					HTTPH.stop();
+				if(HttpHandler.isIstanced() && (!HttpHandler.getInstance().isSomeoneConnected()) ) {
+					HttpHandler.getInstance().stop();
 				}
 				dispose();
 			}
@@ -66,9 +63,9 @@ public class QrCodeUI extends JFrame implements IRemoteUpdate{
 		contentPane.add(lblDescription);
 		
 		try {
-			if(HTTPH!=null) {
-				HTTPH.registerUI(REGISTER_MODE.CONNECTION, QrCodeUI.this);
-				QrCode qr0 = QrCode.encodeText("http://"+HTTPH.getIP()+":"+HttpHandler.PORT, QrCode.Ecc.LOW);
+			if(HttpHandler.isIstanced()) {
+				HttpHandler.getInstance().registerUI(REGISTER_MODE.CONNECTION, QrCodeUI.this);
+				QrCode qr0 = QrCode.encodeText("http://"+HttpHandler.getInstance().getIP()+":"+HttpHandler.PORT, QrCode.Ecc.LOW);
 				L_qrcode.setIcon(new ImageIcon(qr0.toImage(10, 4)));
 			} else 
 				throw new IOException("Server web non attivo.");
@@ -87,8 +84,8 @@ public class QrCodeUI extends JFrame implements IRemoteUpdate{
 	@Override
 	public void appStatusNotification(STATUS status) {
 		Logger.info("Nuovo client connesso! Unregister & Dispose!");
-		if(HTTPH!=null) {
-			this.HTTPH.unregisterUI(QrCodeUI.this);
+		if(HttpHandler.isIstanced()) {
+			HttpHandler.getInstance().unregisterUI(QrCodeUI.this);
 		}
 		dispose();
 	}
