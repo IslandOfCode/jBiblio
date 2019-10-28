@@ -5,11 +5,11 @@
 
 	<groupId>it.islandofcode</groupId>
 	<artifactId>jbiblio</artifactId>
-	<version>0.9.8</version>
+	<version>0.9.8.1</version>
 	<packaging>jar</packaging>
 
 	<name>jbiblio</name>
-	<url>http://islandofcode.it</url>
+	<url>https://www.islandofcode.it/project/jBiblio</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -114,4 +114,12 @@
 			</plugin>
 		</plugins>
 	</build>
+	<organization>
+		<url>http://islandofcode.it</url>
+		<name>IslandOfCode.it</name>
+	</organization>
+	<issueManagement>
+		<system>Github</system>
+		<url>https://github.com/IslandOfCode/jBiblio/issues</url>
+	</issueManagement>
 </project>

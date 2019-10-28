@@ -27,10 +27,19 @@ public class Settings {
 	public static final int DEFAULT_DURATA_PRESTITO = 15;
 	public static final String DEFAULT_TITOLO_RESPONSABILE = "Referente";
 	
-	public static final int[] DURATE = {7,10,15,30};
+	public static final int[] DURATE = {7,10,15,30,45};
 	public static final String[] TITOLI = {"Referente", "Responsabile", "Curatore", "Curatrice", "Insegnante", "Sig.", "Sig.ra", "Dott.", "Dott.sa"};
 	
 	static final String FILENAME = "pref.properties";
+	
+	public static boolean mapValueEquals(Map<PROPERTIES, String> map1, Map<PROPERTIES, String> map2) {
+		for(PROPERTIES key : map1.keySet()) {
+			if(!map1.get(key).equals(map2.get(key))) {
+				return false;
+			}
+		}
+		return true;
+	}
 	
 	public static boolean initPropFile() {
 		Properties prop = new Properties();
