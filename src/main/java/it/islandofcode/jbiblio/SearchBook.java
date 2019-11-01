@@ -26,6 +26,7 @@ import it.islandofcode.jbiblio.companioapp.HttpHandler;
 import it.islandofcode.jbiblio.companioapp.HttpHandler.REGISTER_MODE;
 import it.islandofcode.jbiblio.companioapp.IRemoteUpdate;
 import it.islandofcode.jbiblio.db.DBManager;
+import it.islandofcode.jbiblio.db.ReadOnlyTableModel;
 
 public class SearchBook extends JFrame implements IRemoteUpdate{
 
@@ -127,14 +128,20 @@ public class SearchBook extends JFrame implements IRemoteUpdate{
 				} else {
 					DefaultTableModel M = (DefaultTableModel) resultTable.getModel();
 					int row = resultTable.getSelectedRow();
-					String ISBN = (String) M.getValueAt(row, 0); //suppongo che ISBN sia sempre all'inizio!
+					int col = ReadOnlyTableModel.indexOfColumnByName(M, "Coll.");
+					if(col<0) {
+						Logger.error("INDEX NOT FOUND FOR COLUMN [Coll.]");
+						JOptionPane.showMessageDialog(contentPane, "Contattare lo sviluppatore.", "Errore interno!!", JOptionPane.ERROR_MESSAGE);
+						return;
+					}
+					String COLL = (String) M.getValueAt(row, col);
 					
-					if(DBManager.checkISBNRemoved(ISBN)) {
+					if(DBManager.checkCollocationRemoved(COLL)) {
 						JOptionPane.showMessageDialog(contentPane, "Il libro scelto non è più disponibile!", "Attenzione!", JOptionPane.WARNING_MESSAGE);
 						return;
 					}
 					
-					new EditBook(EditBook.BOOKMODE.EDIT, ISBN, parent);
+					new EditBook(EditBook.BOOKMODE.EDIT, COLL, parent);
 				}
 			}
 		});
@@ -149,14 +156,20 @@ public class SearchBook extends JFrame implements IRemoteUpdate{
 				} else {
 					DefaultTableModel M = (DefaultTableModel) resultTable.getModel();
 					int row = resultTable.getSelectedRow();
-					String ISBN = (String) M.getValueAt(row, 0); //suppongo che ISBN sia sempre all'inizio!
+					int col = ReadOnlyTableModel.indexOfColumnByName(M, "Coll.");
+					if(col<0) {
+						Logger.error("INDEX NOT FOUND FOR COLUMN [Coll.]");
+						JOptionPane.showMessageDialog(contentPane, "Contattare lo sviluppatore.", "Errore interno!!", JOptionPane.ERROR_MESSAGE);
+						return;
+					}
+					String COLL = (String) M.getValueAt(row, col);
 					
-					if(DBManager.checkISBNRemoved(ISBN)) {
+					if(DBManager.checkCollocationRemoved(COLL)) {
 						JOptionPane.showMessageDialog(contentPane, "Il libro scelto è già stato rimosso!", "Attenzione!", JOptionPane.WARNING_MESSAGE);
 						return;
 					}
 					
-					int ret = DBManager.removeBook(ISBN);
+					int ret = DBManager.removeBook(COLL);
 					
 					if(ret<0) {
 						JOptionPane.showMessageDialog(contentPane, "Non è stato possibile rimuovere il libro selezionato.", "Errore DataBase!", JOptionPane.ERROR_MESSAGE);
