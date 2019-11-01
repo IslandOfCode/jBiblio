@@ -72,7 +72,7 @@ public class HttpHandler {
 		Logger.debug("ServerRunner unregister ALL");
 	}
 
-	private String notifyRegisterd(STATUS event, String data) {
+	private String notifyRegistered(STATUS event, String data) {
 
 		Logger.debug("Frame registrati " + registered.size());
 
@@ -139,7 +139,7 @@ public class HttpHandler {
 			String UUID = java.util.UUID.randomUUID().toString().replace("-", "");
 			//clients.add(UUID);
 			CLIENT = UUID;
-			notifyRegisterd(STATUS.CONNECTED, request.ip()+"#"+UUID);
+			notifyRegistered(STATUS.CONNECTED, request.ip()+"#"+UUID);
 			return UUID;
 		});
 		
@@ -150,7 +150,7 @@ public class HttpHandler {
 			if(CLIENT.equals(request.params(PARAM_KEY))) {
 				//clients.remove(request.params(PARAM_KEY));
 				CLIENT = "";
-				notifyRegisterd(STATUS.DISCONNECTED, request.ip()+"#"+request.params(PARAM_KEY));
+				notifyRegistered(STATUS.DISCONNECTED, request.ip()+"#"+request.params(PARAM_KEY));
 				
 				Logger.debug("RESPOND TO [" + request.ip() + "] WITH {" + RESPONSE_POSITIVE_DISCONNECTION + "}");
 				return RESPONSE_POSITIVE_DISCONNECTION;
@@ -171,7 +171,7 @@ public class HttpHandler {
 			//if (checkIfClientConnected(request.params(PARAM_KEY))) {
 			if(CLIENT.equals(request.params(PARAM_KEY))) {
             	Logger.debug("ISBN ["+request.params(PARAM_ISBN)+"] ACCETTATO, KEY CONFERMATA");
-            	notifyRegisterd(STATUS.DATA_RECEIVED, request.params(PARAM_ISBN));
+            	notifyRegistered(STATUS.DATA_RECEIVED, request.params(PARAM_ISBN));
 				return RESPONSE_OK;
 			} else {
 				Logger.info("RESPOND TO [" + request.ip() + "] WITH {" + RESPONSE_UNAUTORIZED + "}");
