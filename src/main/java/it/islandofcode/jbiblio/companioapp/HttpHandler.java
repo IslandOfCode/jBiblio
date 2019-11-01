@@ -7,9 +7,10 @@ import static spark.Spark.ipAddress;
 import static spark.Spark.notFound;
 import static spark.Spark.port;
 
-import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -20,14 +21,12 @@ import spark.Spark;
 
 public class HttpHandler {
 	
+	private static HttpHandler instance = null;
+	
 	public static final String URI_CONNECT = "connect";
-	
-	public static final String PARAM_DISCONNECT = "disconnect";
-	
-	public static final String PARAM_ISBN = "isbn";
-	
+	public static final String URI_DISCONNECT = "disconnect";
 	public static final String URI_PING = "ping";
-	
+	public static final String PARAM_ISBN = "isbn";
 	public static final String PARAM_KEY = "key";
 	
 	private static final String RESPONSE_ERROR = "ERROR";
@@ -36,40 +35,26 @@ public class HttpHandler {
 	private static final String RESPONSE_POSITIVE_DISCONNECTION = "BYE";
 	private static final String RESPONSE_PONG = "PONG";
 	
-	private static final String[] DNS_SVR_ADDR = {"8.8.8.8","8.8.4.4","1.1.1.1"};
-	
-
 	public static enum REGISTER_MODE {
 		CONNECTION, INPUT_DATA
 	}
 	
 	public static final int PORT = 6339;
-	private String IP;
+	public static final String PROTOCOL = "http";
+	private String IP = "";
 	
-	//private List<String> clients = new ArrayList<>();
 	private String CLIENT = "";
+	private ConcurrentHashMap<IRemoteUpdate, REGISTER_MODE> registered;
 
-	private ConcurrentHashMap<IRemoteUpdate, REGISTER_MODE> registered = new ConcurrentHashMap<>();
-
-	public HttpHandler() throws IOException {
-		
-		this.IP = "";
-		int i = 0;
-		while (IP.isEmpty()) {
-			Logger.debug("TEST REMOTE DNS :" + DNS_SVR_ADDR[i]);
-			try (final DatagramSocket dtgrm = new DatagramSocket()) {
-				dtgrm.connect(InetAddress.getByName(DNS_SVR_ADDR[i]), 10002);
-				this.IP = dtgrm.getLocalAddress().getHostAddress().replace("/", "");
-			}
-			i++;
+	private HttpHandler() {
+		registered = new ConcurrentHashMap<>();
+	}
+	
+	public static HttpHandler getInstance(){
+		if(instance==null) {
+			instance = new HttpHandler();
 		}
-		
-		//Se tutti i server sono offline.
-		if(IP==null || IP.isEmpty()) {
-			throw new IOException("Missing external IP");
-		}
-		
-		Logger.info("HTTPHANDLER istanziato (ma non avviato) su URL: http://" + IP + ":" +PORT);
+		return instance;
 	}
 
 	public void registerUI(REGISTER_MODE mode, IRemoteUpdate UI) {
@@ -87,7 +72,7 @@ public class HttpHandler {
 		Logger.debug("ServerRunner unregister ALL");
 	}
 
-	private String notifyRegisterd(STATUS event, String data) {
+	private String notifyRegistered(STATUS event, String data) {
 
 		Logger.debug("Frame registrati " + registered.size());
 
@@ -115,22 +100,31 @@ public class HttpHandler {
 		return null;
 	}
 	
-	public boolean isSomeoneConnected() {
-		//return clients.size()>0;
+	public boolean isClientConnected() {
 		return (CLIENT!=null) && !CLIENT.isEmpty();
 	}	
 	
-	public String getIP() {
-		return this.IP;
+	public String getServerURL() throws IllegalStateException{
+		if(IP.isEmpty())
+			throw new IllegalStateException("Il server non è stato ancora avviato!");
+		return PROTOCOL+"://"+IP+":"+PORT;
 	}
 
 	public void start() {
-		try {
-			Thread.sleep(1500);
-		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+		this.IP = "";
+		try (final DatagramSocket dtgrm = new DatagramSocket()) {
+			dtgrm.connect(InetAddress.getByName("8.8.8.8"), 10002);
+			this.IP = dtgrm.getLocalAddress().getHostAddress().replace("/", "");
+		} catch (SocketException | UnknownHostException e) {
+			Logger.debug(e);
 		}
+		//pare che si ottenga l'ip anche se il server è offline o non raggiungibile!
+		//quindi questo controllo è inutile, tranne se la jvm nega le operazioni di rete
+		//oppure se la scheda di rete è disabilitata
+		if(IP==null || IP.isEmpty() || IP.length()<7) { //7 è il minimo numero di caratteri in una stringa IP 1.3.5.7
+			IP = "127.0.0.1";
+		}
+		
 		initExceptionHandler((e) -> Logger.error(e));
 
 		ipAddress(IP);
@@ -145,7 +139,7 @@ public class HttpHandler {
 			String UUID = java.util.UUID.randomUUID().toString().replace("-", "");
 			//clients.add(UUID);
 			CLIENT = UUID;
-			notifyRegisterd(STATUS.CONNECTED, request.ip()+"#"+UUID);
+			notifyRegistered(STATUS.CONNECTED, request.ip()+"#"+UUID);
 			return UUID;
 		});
 		
@@ -156,7 +150,7 @@ public class HttpHandler {
 			if(CLIENT.equals(request.params(PARAM_KEY))) {
 				//clients.remove(request.params(PARAM_KEY));
 				CLIENT = "";
-				notifyRegisterd(STATUS.DISCONNECTED, request.ip()+"#"+request.params(PARAM_KEY));
+				notifyRegistered(STATUS.DISCONNECTED, request.ip()+"#"+request.params(PARAM_KEY));
 				
 				Logger.debug("RESPOND TO [" + request.ip() + "] WITH {" + RESPONSE_POSITIVE_DISCONNECTION + "}");
 				return RESPONSE_POSITIVE_DISCONNECTION;
@@ -177,7 +171,7 @@ public class HttpHandler {
 			//if (checkIfClientConnected(request.params(PARAM_KEY))) {
 			if(CLIENT.equals(request.params(PARAM_KEY))) {
             	Logger.debug("ISBN ["+request.params(PARAM_ISBN)+"] ACCETTATO, KEY CONFERMATA");
-            	notifyRegisterd(STATUS.DATA_RECEIVED, request.params(PARAM_ISBN));
+            	notifyRegistered(STATUS.DATA_RECEIVED, request.params(PARAM_ISBN));
 				return RESPONSE_OK;
 			} else {
 				Logger.info("RESPOND TO [" + request.ip() + "] WITH {" + RESPONSE_UNAUTORIZED + "}");
@@ -185,26 +179,16 @@ public class HttpHandler {
 			}
 		});
 
-		Logger.info("HttpHandler avviato.");
+		Logger.info("HTTPHANDLER avviato su URL: http://" + IP + ":" +PORT);
 	}
 	
 	public void stop() {
 		Logger.debug("SERVER STOP REQUESTED");
-		Spark.stop();
-	}
-	/*
-	private boolean checkIfClientConnected(String uuid) {
-		if(uuid==null || uuid.trim().isEmpty())
-			return false;
-		for(String S : clients) {
-			if(S.equals(uuid.trim())) {
-				Logger.debug("TROVATO : " +uuid);
-				return true;
-			}
+		if(!IP.isEmpty()) {
+			Spark.stop();
+			IP = "";
+			Logger.debug("\tStop actually called!");
 		}
-		Logger.debug("NON trovato : " +uuid);
-		return false;
 	}
-	*/
 
 }

@@ -50,38 +50,10 @@ public class SearchBook extends JFrame implements IRemoteUpdate{
 	
 	private JTable resultTable;
 	
-	private GUI parent;
-	private HttpHandler HTTPH;
-	
-	public void setMode(AFTERSEARCH mode, HttpHandler httph, GUI parent) {
-		
-		this.parent = parent;
-		this.HTTPH = httph;
-		
-		switch(mode) {
-		case EDIT:
-			P_command.remove(B_removeSelected);
-			break;
-		case DELETE:
-			P_command.remove(B_editSelected);
-			break;
-		default: //NOTHING o altro
-			P_command.remove(B_editSelected);
-			P_command.remove(B_removeSelected);
-		}
-		
-		parent.signalFrameOpened(getTitle());
-		
-		if(HTTPH!=null)
-			HTTPH.registerUI(REGISTER_MODE.INPUT_DATA, this);
-		
-		this.setVisible(true);
-	}
-
 	/**
 	 * Invocami se devi mostrare tutto
 	 */
-	public SearchBook() {
+	public SearchBook(AFTERSEARCH mode, GUI parent) {
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
@@ -162,9 +134,7 @@ public class SearchBook extends JFrame implements IRemoteUpdate{
 						return;
 					}
 					
-					EditBook E = new EditBook();
-					E.SetMode(EditBook.BOOKMODE.EDIT, ISBN, HTTPH, parent);
-					//EB.setVisible(true);
+					new EditBook(EditBook.BOOKMODE.EDIT, ISBN, parent);
 				}
 			}
 		});
@@ -206,6 +176,26 @@ public class SearchBook extends JFrame implements IRemoteUpdate{
 			}
 		});
 		P_command.add(B_close);
+		
+		
+		
+		switch(mode) {
+		case EDIT:
+			P_command.remove(B_removeSelected);
+			break;
+		case DELETE:
+			P_command.remove(B_editSelected);
+			break;
+		default: //NOTHING o altro
+			P_command.remove(B_editSelected);
+			P_command.remove(B_removeSelected);
+		}
+		
+		parent.signalFrameOpened(getTitle());
+		
+		HttpHandler.getInstance().registerUI(REGISTER_MODE.INPUT_DATA, this);
+		
+		this.setVisible(true);
 
 	}
 	

@@ -1,33 +1,34 @@
 package it.islandofcode.jbiblio;
 
+import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.concurrent.ExecutionException;
+import java.util.regex.Pattern;
+
+import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JTextField;
-import javax.swing.JButton;
+import javax.swing.JPanel;
 import javax.swing.JSeparator;
-import java.awt.Font;
-import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.util.regex.Pattern;
-import java.awt.event.ActionEvent;
+import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 
 import org.tinylog.Logger;
 
 import it.islandofcode.jbiblio.artefact.Book;
 import it.islandofcode.jbiblio.companioapp.HttpHandler;
-import it.islandofcode.jbiblio.companioapp.IRemoteUpdate;
 import it.islandofcode.jbiblio.companioapp.HttpHandler.REGISTER_MODE;
+import it.islandofcode.jbiblio.companioapp.IRemoteUpdate;
 import it.islandofcode.jbiblio.db.DBManager;
-import it.islandofcode.jbiblio.gbooks.BookNotFound;
 import it.islandofcode.jbiblio.gbooks.GBooks;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 
 public class EditBook extends JFrame implements IRemoteUpdate{
 	
@@ -54,46 +55,14 @@ public class EditBook extends JFrame implements IRemoteUpdate{
 	private BOOKMODE MODE;
 	private Book book;
 	
-	private HttpHandler SVR;
-	private GUI parent;
-	
-	
-	public void SetMode(BOOKMODE mode, String ID, HttpHandler svr, GUI parent) {
-		this.parent = parent;
-		this.SVR = svr;
-		if(SVR!=null)
-			SVR.registerUI(REGISTER_MODE.INPUT_DATA, this);
-		
-		this.MODE = mode;
-
-		switch(MODE) {
-		case ADD:
-			this.setTitle("Aggiungi nuovo libro");
-			B_addBook.setText("Aggiungi libro");
-			break;
-		case EDIT:
-			book = DBManager.getBookByISBN(ID);
-			
-			populateForm();
-			
-			this.setTitle("Modifica libro");
-			B_addBook.setText("Modifica libro");
-			break;
-		}
-		
-		parent.signalFrameOpened(getTitle());
-		this.setVisible(true);
-	}
-
 	/**
 	 * Create the frame.
 	 */
-	public EditBook() {
+	public EditBook(BOOKMODE mode, String ID, GUI parent) {
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
-				if(SVR!=null)
-					SVR.unregisterUI(EditBook.this);
+				HttpHandler.getInstance().unregisterUI(EditBook.this);
 				parent.signalFrameClosed(getTitle());
 				dispose();
 			}
@@ -221,8 +190,7 @@ public class EditBook extends JFrame implements IRemoteUpdate{
 					Logger.warn("nessun aggiornamento effetturato ["+book.hashCode()+"]=["+bookUpdate.hashCode()+"]");
 				}
 				
-				if(SVR!=null)
-					SVR.unregisterUI(EditBook.this);
+				HttpHandler.getInstance().unregisterUI(EditBook.this);
 				parent.signalFrameClosed(getTitle());
 				dispose();
 			}
@@ -240,32 +208,75 @@ public class EditBook extends JFrame implements IRemoteUpdate{
 		L_thumbnail.setHorizontalAlignment(SwingConstants.CENTER);
 		L_thumbnail.setBounds(0, 0, 168, 187);
 		P_thumbnail.add(L_thumbnail);
+		
+		
+
+		HttpHandler.getInstance().registerUI(REGISTER_MODE.INPUT_DATA, this);
+		
+		this.MODE = mode;
+
+		switch(MODE) {
+		case ADD:
+			this.setTitle("Aggiungi nuovo libro");
+			B_addBook.setText("Aggiungi libro");
+			break;
+		case EDIT:
+			book = DBManager.getBookByISBN(ID);
+			
+			populateForm();
+			
+			this.setTitle("Modifica libro");
+			B_addBook.setText("Modifica libro");
+			break;
+		}
+		
+		parent.signalFrameOpened(getTitle());
+		this.setVisible(true);
 	}
 
 	private void searchAction() {
-		if(TXT_ISBN.getText().isEmpty()) {
-			JOptionPane.showMessageDialog(contentPane, "Inserire un ISBN valido!", "Errore ISBN mancante", JOptionPane.WARNING_MESSAGE);
+		if (TXT_ISBN.getText().isEmpty()) {
+			JOptionPane.showMessageDialog(contentPane, "Inserire un ISBN valido!", "Errore ISBN mancante",
+					JOptionPane.WARNING_MESSAGE);
 			return;
 		}
 
-		/*if(DBManager.checkISBNAlreadyPresent(TXT_ISBN.getText().trim())) {
-			JOptionPane.showMessageDialog(contentPane, "Questo ISBN è già presente nel database.", "Libro già presente", JOptionPane.WARNING_MESSAGE);
-			return;
-		}*/
-		
-		try {
-			int r = JOptionPane.showConfirmDialog(contentPane, "<html>Questa operazione sovrascrive le informazioni già inserite.<br/>Vuoi davvero continuare?</html>", "ATTENZIONE!", JOptionPane.OK_CANCEL_OPTION);
-			if(r!=0) return;
-			Book B = GBooks.searchByISBN(TXT_ISBN.getText().trim());
-			book = B;
-			populateForm();
-		} catch (GeneralSecurityException | IOException e1) {
-			JOptionPane.showMessageDialog(contentPane, "Controllare la propria connessione ad internet e riprovare", "Connessione ad interne assente!", JOptionPane.ERROR_MESSAGE);
-			Logger.error(e1);
-		} catch (BookNotFound e1) {
-			JOptionPane.showMessageDialog(contentPane, "Controllare l'ISBN inserito o inserire a mano le informazioni.", "Libro non trovato", JOptionPane.WARNING_MESSAGE);
-			Logger.error(e1);
-		}
+		GBooks GB = new GBooks(TXT_ISBN.getText().trim());
+
+		GB.addPropertyChangeListener(new PropertyChangeListener() {
+			public void propertyChange(PropertyChangeEvent e) {
+				B_addBook.setEnabled(true);
+				B_searchBook.setEnabled(true);
+				TXT_ISBN.setEnabled(true);
+
+				switch (e.getPropertyName()) {
+				case "done":
+					Logger.info("GBooks ha finito il lavoro.");
+					try {
+						book = GB.get();
+						populateForm();
+					} catch (InterruptedException | ExecutionException e1) {
+						Logger.error(e1);
+						JOptionPane.showMessageDialog(contentPane,
+								"<html>Impossibile recuperare le informazioni sul libro<br/><b>ERRORE: </b><code>"
+										+ e1.getMessage() + "</code>",
+								"Errore!", JOptionPane.ERROR_MESSAGE);
+					}
+					break;
+				case "error":
+					Logger.error("GBooks ha ritornato " + e.getPropertyName() + "->" + e.getNewValue());
+					JOptionPane.showMessageDialog(contentPane, e.getNewValue(), "Errore!", JOptionPane.ERROR_MESSAGE);
+					break;
+				}
+			}
+		});
+
+		B_addBook.setEnabled(false);
+		B_searchBook.setEnabled(false);
+		TXT_ISBN.setEnabled(false);
+
+		GB.execute();
+
 	}
 	
 	private Book retriveDataFromForm() {

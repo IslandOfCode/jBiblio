@@ -60,16 +60,12 @@ public class SearchLoan extends JFrame implements IRemoteUpdate{
 	private JCheckBox CBX_resolved;
 	private JLabel lblSez;
 	private JPanel P_search_command;
-	
-	private HttpHandler HTTPH;
-	
-	
+		
 	/**
 	 * Create the frame.
 	 */
-	public SearchLoan(GUI p, HttpHandler httph) {
+	public SearchLoan(GUI p) {
 		
-		this.HTTPH = httph;
 		this.parent = p;
 		
 		addWindowListener(new WindowAdapter() {
@@ -77,8 +73,7 @@ public class SearchLoan extends JFrame implements IRemoteUpdate{
 			public void windowClosing(WindowEvent e) {
 				Logger.debug("FRAME ["+getTitle()+"] IN CHIUSURA");
 				parent.signalFrameClosed(getTitle());
-				if(HTTPH!=null)
-					HTTPH.unregisterUI(SearchLoan.this);
+				HttpHandler.getInstance().unregisterUI(SearchLoan.this);
 				e.getWindow().dispose();
 			}
 		});
@@ -179,8 +174,7 @@ public class SearchLoan extends JFrame implements IRemoteUpdate{
 		B_close.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				parent.signalFrameClosed(getTitle());
-				if(HTTPH!=null)
-					HTTPH.unregisterUI(SearchLoan.this);
+				HttpHandler.getInstance().unregisterUI(SearchLoan.this);
 				dispose();
 			}
 		});
@@ -233,8 +227,7 @@ public class SearchLoan extends JFrame implements IRemoteUpdate{
 		P_command.add(B_view);
 		P_command.add(B_close);
 		
-		if(HTTPH!=null)
-			HTTPH.registerUI(REGISTER_MODE.INPUT_DATA, this);
+		HttpHandler.getInstance().registerUI(REGISTER_MODE.INPUT_DATA, this);
 		
 		parent.signalFrameOpened(getTitle());
 		this.setVisible(true);

@@ -5,6 +5,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -35,7 +36,8 @@ public class PreferenceUI extends JFrame {
 	private JComboBox<String> CB_title;
 	private JComboBox<Integer> CB_lenght;
 
-
+	private Map<Settings.PROPERTIES, String> oldValue;
+	
 	/**
 	 * Create the frame.
 	 */
@@ -43,19 +45,26 @@ public class PreferenceUI extends JFrame {
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
-				int r = JOptionPane.showConfirmDialog(contentPane,
-						"Vuoi salvare le impostazioni prima di chiudere?",
-						"Attenzione",
-						JOptionPane.YES_NO_OPTION,
-						JOptionPane.WARNING_MESSAGE);
-				if(r==0) {
-					boolean re = saveProperties();
-					if(re) {
-						JOptionPane.showMessageDialog(contentPane, "Preferenze salvate con successo!", "Successo!", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(LoadingUI.class.getResource("/icon/done.png")));
-					} else {
-						JOptionPane.showMessageDialog(contentPane, "Impossibile salvare le preferenze!", "Errore!", JOptionPane.ERROR_MESSAGE);
+				
+				Map<Settings.PROPERTIES, String> newValue = createMap();
+				if(!Settings.mapValueEquals(oldValue, newValue)) {
+					oldValue = newValue;
+					
+					int r = JOptionPane.showConfirmDialog(contentPane,
+							"Vuoi salvare le impostazioni prima di chiudere?",
+							"Attenzione",
+							JOptionPane.YES_NO_OPTION,
+							JOptionPane.WARNING_MESSAGE);
+					if(r==0) {
+						boolean re = saveProperties();
+						if(re) {
+							JOptionPane.showMessageDialog(contentPane, "Preferenze salvate con successo!", "Successo!", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(LoadingUI.class.getResource("/icon/done.png")));
+						} else {
+							JOptionPane.showMessageDialog(contentPane, "Impossibile salvare le preferenze!", "Errore!", JOptionPane.ERROR_MESSAGE);
+						}
 					}
 				}
+				
 				dispose();
 			}
 		});
@@ -124,12 +133,23 @@ public class PreferenceUI extends JFrame {
 		JButton B_save = new JButton("Salva");
 		B_save.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-					boolean r = saveProperties();
-					if(r) {
-						JOptionPane.showMessageDialog(contentPane, "Preferenze salvate con successo!", "Successo!", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(LoadingUI.class.getResource("/icon/done.png")));
-					} else {
-						JOptionPane.showMessageDialog(contentPane, "Impossibile salvare le preferenze!", "Errore!", JOptionPane.ERROR_MESSAGE);
-					}
+				Map<Settings.PROPERTIES, String> newValue = createMap();
+				if(Settings.mapValueEquals(oldValue, newValue)) {
+					JOptionPane.showMessageDialog(contentPane, "Nessuna modifica rilevata.", "Attenzione",
+							JOptionPane.INFORMATION_MESSAGE);
+					return;
+				}
+				oldValue = newValue;
+				
+				boolean r = saveProperties();
+				if (r) {
+					JOptionPane.showMessageDialog(contentPane, "Preferenze salvate con successo!", "Successo!",
+							JOptionPane.INFORMATION_MESSAGE,
+							new ImageIcon(LoadingUI.class.getResource("/icon/done.png")));
+				} else {
+					JOptionPane.showMessageDialog(contentPane, "Impossibile salvare le preferenze!", "Errore!",
+							JOptionPane.ERROR_MESSAGE);
+				}
 			}
 		});
 		B_save.setBounds(10, 259, 98, 26);
@@ -146,6 +166,7 @@ public class PreferenceUI extends JFrame {
 
 		populateComboBox();
 		loadValue();
+		oldValue = createMap();
 		
 		setVisible(true);
 	}
@@ -175,7 +196,7 @@ public class PreferenceUI extends JFrame {
 		CB_title.setModel(new DefaultComboBoxModel<String>(Settings.TITOLI));
 	}
 	
-	private boolean saveProperties() {
+	private Map<Settings.PROPERTIES, String> createMap(){
 		HashMap<Settings.PROPERTIES, String> map = new HashMap<>();
 		
 		map.put(Settings.PROPERTIES.DURATA_PRESTITO, ((Integer)CB_lenght.getSelectedItem()).toString());
@@ -183,8 +204,12 @@ public class PreferenceUI extends JFrame {
 		map.put(Settings.PROPERTIES.NOME_RESPONSABILE, TXT_name.getText().trim());
 		map.put(Settings.PROPERTIES.NOME_SCUOLA, TXT_school.getText().trim());
 		
+		return map;
+	}
+	
+	private boolean saveProperties() {
 		try {
-			return Settings.setValueMap(map);
+			return Settings.setValueMap(oldValue);
 		} catch (PropertiesException e) {
 			Logger.error(e);
 			JOptionPane.showMessageDialog(contentPane, "<html>Impossibile salvare file preferenze:<br/>Errore: <code>"+e.getMessage(), "Errore!", JOptionPane.ERROR_MESSAGE);

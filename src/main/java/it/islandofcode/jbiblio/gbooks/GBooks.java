@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.stream.Collectors;
 
+import javax.swing.SwingWorker;
+
 import org.tinylog.Logger;
 
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
@@ -16,23 +18,47 @@ import com.google.api.services.books.model.Volumes;
 import com.google.api.services.books.Books.Volumes.List;
 import it.islandofcode.jbiblio.artefact.Book;
 
-public class GBooks {
-	public static Book searchByISBN(String ISBN) throws GeneralSecurityException, IOException, BookNotFound {
+public class GBooks extends SwingWorker<Book, Object>{
+	private String ISBN;
+	public GBooks(String iSBN) {
+		this.ISBN = iSBN;
+	}
+	
+	@Override
+	protected Book doInBackground() {// throws GeneralSecurityException, IOException, BookNotFound {
 		Book ret = new Book();
 
-		final Books books = new Books.Builder(GoogleNetHttpTransport.newTrustedTransport(),
-				JacksonFactory.getDefaultInstance(), null).setApplicationName(GBooksCredential.APPLICATION_NAME)
-						.setGoogleClientRequestInitializer(new BooksRequestInitializer(GBooksCredential.getKEY()))
-						.build();
+		Books books = null;
+		try {
+			books = new Books.Builder(GoogleNetHttpTransport.newTrustedTransport(),
+					JacksonFactory.getDefaultInstance(), null).setApplicationName(GBooksCredential.APPLICATION_NAME)
+							.setGoogleClientRequestInitializer(new BooksRequestInitializer(GBooksCredential.getKEY()))
+							.build();
+		} catch (GeneralSecurityException | IOException e) {
+			Logger.error(e);
+			firePropertyChange("error", null, "Controllare la propria connessione ad internet e riprovare");
+			return null;
+		}
 
 		String query = "isbn:" + ISBN;
-		List volumesList = books.volumes().list(query);
-
-		Volumes volumes = volumesList.execute();
-		if (volumes.getTotalItems() == 0 || volumes.getItems() == null) {
-			Logger.error("Libro cercato [" + ISBN + "] non trovato");
-			throw new BookNotFound();
+		Volumes volumes = null;
+		List volumesList = null;
+		
+		try {
+			volumesList = books.volumes().list(query);
+			volumes = volumesList.execute();
+			if (volumes.getTotalItems() == 0 || volumes.getItems() == null) {
+				Logger.error("Libro cercato [" + ISBN + "] non trovato");
+				firePropertyChange("error", null, "Controllare l'ISBN inserito o inserire a mano le informazioni.");
+				//throw new BookNotFound();
+			}
+		} catch (IOException e) {
+			Logger.error(e);
+			firePropertyChange("error", null, "Controllare la propria connessione ad internet e riprovare");
+			return null;
 		}
+
+		
 
 		Volume volume = volumes.getItems().get(0);
 		//inutile fare for se tanto cerco per isbn e trovo un solo libro, se lo trovo!
@@ -61,7 +87,7 @@ public class GBooks {
 			ret.setThumbnail(volumeInfo.getImageLinks().getThumbnail());
 		}
 		// } //fine for
-
+		firePropertyChange("done", null, "QWE");
 		return ret;
 	}
 }

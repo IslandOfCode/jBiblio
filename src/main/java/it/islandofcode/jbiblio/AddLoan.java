@@ -55,24 +55,20 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 	private Client client;
 	private Loan loan;
 	private JTable resultTable;
-	
-	private HttpHandler HTTPH;
 
 	/**
 	 * Create the frame.
 	 */
-	public AddLoan(Client C, HttpHandler httph) {
+	public AddLoan(Client C) {
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
-				if(HTTPH!=null)
-					HTTPH.unregisterUI(AddLoan.this);
+				HttpHandler.getInstance().unregisterUI(AddLoan.this);
 				dispose();
 			}
 		});
 		
-		if(httph!=null)
-			HTTPH.registerUI(REGISTER_MODE.INPUT_DATA, this);
+		HttpHandler.getInstance().registerUI(REGISTER_MODE.INPUT_DATA, this);
 		
 		this.client = C;
 		searched = new ArrayList<Book>();
@@ -218,8 +214,7 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 		ConfirmLoan CL = new ConfirmLoan(loan.getID());
 		CL.setVisible(true);
 		
-		if(HTTPH!=null)
-			HTTPH.unregisterUI(AddLoan.this);
+		HttpHandler.getInstance().unregisterUI(AddLoan.this);
 		this.dispose();
 	}
 	

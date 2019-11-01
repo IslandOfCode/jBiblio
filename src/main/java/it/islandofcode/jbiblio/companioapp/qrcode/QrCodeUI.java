@@ -2,7 +2,7 @@ package it.islandofcode.jbiblio.companioapp.qrcode;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.IOException;
+
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -15,8 +15,8 @@ import javax.swing.border.EmptyBorder;
 import org.tinylog.Logger;
 
 import it.islandofcode.jbiblio.companioapp.HttpHandler;
-import it.islandofcode.jbiblio.companioapp.IRemoteUpdate;
 import it.islandofcode.jbiblio.companioapp.HttpHandler.REGISTER_MODE;
+import it.islandofcode.jbiblio.companioapp.IRemoteUpdate;
 
 public class QrCodeUI extends JFrame implements IRemoteUpdate{
 
@@ -24,21 +24,18 @@ public class QrCodeUI extends JFrame implements IRemoteUpdate{
 	private JPanel contentPane;
 	
 	private JLabel L_qrcode;
-	
-	private HttpHandler HTTPH;
 
 	/**
 	 * Create the frame.
 	 */
-	public QrCodeUI(HttpHandler ht) {
+	public QrCodeUI() {
 		setAlwaysOnTop(true);
-		this.HTTPH = ht;
 		
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
-				if(HTTPH!=null && (!HTTPH.isSomeoneConnected()) ) {
-					HTTPH.stop();
+				if(!HttpHandler.getInstance().isClientConnected()) {
+					HttpHandler.getInstance().stop();
 				}
 				dispose();
 			}
@@ -66,30 +63,28 @@ public class QrCodeUI extends JFrame implements IRemoteUpdate{
 		contentPane.add(lblDescription);
 		
 		try {
-			if(HTTPH!=null) {
-				HTTPH.registerUI(REGISTER_MODE.CONNECTION, QrCodeUI.this);
-				QrCode qr0 = QrCode.encodeText("http://"+HTTPH.getIP()+":"+HttpHandler.PORT, QrCode.Ecc.LOW);
+				HttpHandler.getInstance().registerUI(REGISTER_MODE.CONNECTION, QrCodeUI.this);
+				QrCode qr0 = QrCode.encodeText(HttpHandler.getInstance().getServerURL(), QrCode.Ecc.LOW);
 				L_qrcode.setIcon(new ImageIcon(qr0.toImage(10, 4)));
-			} else 
-				throw new IOException("Server web non attivo.");
 
-		} catch (IOException e1) {
+		} catch (IllegalStateException e1) {
 			Logger.error(e1);
 			JOptionPane.showMessageDialog(contentPane, "<html>Non è stato possibile creare il codice QR.<br/>"
 					+ "<center><code>"+e1.getMessage()+"</code></center></html>",
 					"Errore!",
 					JOptionPane.ERROR_MESSAGE);
 			dispose();
+			return;
 		}
 		this.setLocationRelativeTo(null);
+		setVisible(true);
+		Logger.debug("QrCodeUI visible");
 	}
 
 	@Override
 	public void appStatusNotification(STATUS status) {
 		Logger.info("Nuovo client connesso! Unregister & Dispose!");
-		if(HTTPH!=null) {
-			this.HTTPH.unregisterUI(QrCodeUI.this);
-		}
+		HttpHandler.getInstance().unregisterUI(QrCodeUI.this);
 		dispose();
 	}
 
