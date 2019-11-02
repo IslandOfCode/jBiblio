@@ -26,6 +26,7 @@ import freemarker.template.TemplateExceptionHandler;
 import it.islandofcode.jbiblio.artefact.Book;
 import it.islandofcode.jbiblio.artefact.Client;
 import it.islandofcode.jbiblio.artefact.Loan;
+import it.islandofcode.jbiblio.db.DBDate;
 import it.islandofcode.jbiblio.db.DBManager;
 import it.islandofcode.jbiblio.settings.Settings;
 import it.islandofcode.jbiblio.stats.LoadingUI.WORKTYPE;
@@ -49,9 +50,9 @@ public class StatsWorker extends SwingWorker<Object, Object> {
 	
 	public StatsWorker(WORKTYPE work, File destination, Client C, Loan L) {
 		this.work = work;
-		this.destination = new File(destination.getAbsolutePath()+File.separator+generateFileName(work));
 		this.client = C;
 		this.loan = L;
+		this.destination = new File(destination.getAbsolutePath()+File.separator+generateFileName(work));
 	}
 
 	@Override
@@ -292,10 +293,10 @@ public class StatsWorker extends SwingWorker<Object, Object> {
 		Map<String, Object> radix = new HashMap<>();
 		List<Book> books = this.loan.getBooks();
 
-		radix.put("nameClient", client.getCognome()+", "+client.getNome());
+		radix.put("nameClient", client.getNome()+" "+client.getCognome());
 		radix.put("classClient", client.getClasse()+client.getSezione());
-		radix.put("dateStart", loan.getDateStart());
-		radix.put("dateEnd", loan.getDateEnd());
+		radix.put("dateStart", (new DBDate(loan.getDateStart())).getHumanDate() );
+		radix.put("dateEnd", (new DBDate(loan.getDateEnd())).getHumanDate() );
 		radix.put("codeLoan", loan.getID());
 		
 		String status ="Attivo";

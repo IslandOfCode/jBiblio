@@ -168,13 +168,14 @@ public class EditBook extends JFrame implements IRemoteUpdate{
 					JOptionPane.showMessageDialog(contentPane, "Campi come ISBN, titolo e collocazione DEVONO essere compilati.", "Campi mancanti!", JOptionPane.WARNING_MESSAGE);
 					return;
 				}
-				
-				if(DBManager.checkBookAlreadyPresent(TXT_collocation.getText().trim().toUpperCase())) {
-					JOptionPane.showMessageDialog(contentPane, "Questa collocazione è già presente nel database.", "Libro già presente", JOptionPane.WARNING_MESSAGE);
-					return;
-				}
-				
+
 				if(MODE==BOOKMODE.ADD) {
+					
+					if(DBManager.checkBookAlreadyPresent(TXT_collocation.getText().trim().toUpperCase())) {
+						JOptionPane.showMessageDialog(contentPane, "Questa collocazione è già presente nel database.", "Libro già presente", JOptionPane.WARNING_MESSAGE);
+						return;
+					}
+					
 					book = retriveDataFromForm();
 					DBManager.addNewBook(book);
 					Logger.info("Nuovo libro aggiunto, ISBN:"+book.getISBN() + " COLLOCAZIONE:"+book.getCollocation());

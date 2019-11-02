@@ -51,7 +51,9 @@ public class EditClient extends JFrame {
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
-				parent.signalFrameClosed(getTitle());
+				if(parent!=null)
+					parent.signalFrameClosed(getTitle());
+				dispose();
 			}
 		});
 		setAlwaysOnTop(true);
@@ -115,6 +117,8 @@ public class EditClient extends JFrame {
 					client = retriveDataFromForm();
 					DBManager.addNewClient(client);
 					Logger.info("Nuovo cliente aggiunto, {" + client.toString() + "}");
+					if(parent!=null)
+						parent.signalFrameClosed(getTitle());
 					dispose();
 				} else { // EDIT
 					Client clientUpdate = retriveDataFromForm();
@@ -123,12 +127,13 @@ public class EditClient extends JFrame {
 						JOptionPane.showMessageDialog(contentPane, "Cliente aggiornato", "Aggiornamento",
 								JOptionPane.INFORMATION_MESSAGE);
 						Logger.info("Cliente [" + client.getID() + "], aggiornato");
+						if(parent!=null)
+							parent.signalFrameClosed(getTitle());
 						dispose();
 					} // else do nothing
 					Logger.warn("nessun aggiornamento effetturato [" + client.hashCode() + "]=["
 							+ clientUpdate.hashCode() + "]");
 				}
-				parent.signalFrameClosed(getTitle());
 			}
 		});
 		B_saveClient.setBounds(130, 143, 139, 26);

@@ -161,6 +161,8 @@ public class ResolveLoan extends JFrame {
 					JOptionPane.showMessageDialog(contentPane, "Il prestito con codice ["+theLoan.getID()+"] è stato risolto.", "Operazione completata", JOptionPane.INFORMATION_MESSAGE);
 				}
 				cleanEverything();
+				if(parent!=null)
+					parent.signalFrameClosed(getTitle());
 				dispose();
 			}
 		});
@@ -168,9 +170,11 @@ public class ResolveLoan extends JFrame {
 		B_resolve.setBounds(10, 267, 98, 26);
 		contentPane.add(B_resolve);
 		
-		B_cancel = new JButton("Cancella");
+		B_cancel = new JButton("Chiudi");
 		B_cancel.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				if(parent!=null)
+					parent.signalFrameClosed(getTitle());
 				dispose();
 			}
 		});
@@ -261,8 +265,7 @@ public class ResolveLoan extends JFrame {
 				}
 
 				File destination = new File(chooser.getSelectedFile().getAbsolutePath());
-								
-				new LoadingUI(null, LoadingUI.WORKTYPE.LOAN, destination, Integer.parseInt(TXT_idLoan.getText().trim()) );
+				new LoadingUI(null, LoadingUI.WORKTYPE.LOAN, destination, theLoan.getID());
 			}
 		});
 		B_printReceipt.setFont(new Font("Dialog", Font.PLAIN, 12));

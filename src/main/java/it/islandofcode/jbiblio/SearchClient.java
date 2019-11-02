@@ -59,7 +59,8 @@ public class SearchClient extends JFrame {
 			@Override
 			public void windowClosing(WindowEvent e) {
 				Logger.debug("FRAME [" + getTitle() + "] IN CHIUSURA");
-				parent.signalFrameClosed(getTitle());
+				if(parent!=null)
+					parent.signalFrameClosed(getTitle());
 				e.getWindow().dispose();
 			}
 		});
@@ -211,6 +212,11 @@ public class SearchClient extends JFrame {
 					JOptionPane.showMessageDialog(contentPane, "Nessuna riga selezionata", "Attenzione!",
 							JOptionPane.WARNING_MESSAGE);
 				} else {
+					int r = JOptionPane.showConfirmDialog(rootPane, "<html>Il cliente non potrà essere più recuperato una volta rimosso.<br/>Confermi la rimozione?", "Conferma rimozione", JOptionPane.YES_NO_OPTION);
+					if(r!=0) return;
+					
+					
+					
 					DefaultTableModel M = (DefaultTableModel) resultTable.getModel();
 					int row = resultTable.getSelectedRow();
 					//int ID = (int) M.getValueAt(row, 0); // suppongo che ID sia sempre all'inizio!
@@ -242,6 +248,8 @@ public class SearchClient extends JFrame {
 		JButton B_close = new JButton("Chiudi");
 		B_close.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				if(parent!=null)
+					parent.signalFrameClosed(getTitle());
 				dispose();
 			}
 		});

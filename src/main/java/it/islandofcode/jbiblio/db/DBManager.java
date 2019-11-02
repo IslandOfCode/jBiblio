@@ -830,7 +830,7 @@ public class DBManager {
 				i++;
 			}
 			if(CG) {
-				pstmt.setString(i, "%"+cognome);
+				pstmt.setString(i, "%"+cognome+"%");
 				i++;
 			}
 			
@@ -1036,22 +1036,6 @@ public class DBManager {
 	}
 	
 	public static int addNewLoan(Loan L) {
-		/*"CREATE TABLE \"Loans\" (
-			`ID` INTEGER PRIMARY KEY AUTOINCREMENT,
-			 `client` INTEGER,
-			  `dataS` TEXT,
-			   `dataE` TEXT,
-			    `returned` INTEGER NOT NULL DEFAULT 0,
-			     FOREIGN KEY(`client`) REFERENCES `Clients`(`ID`)
-			)";
-		*/
-		/*
-		 "CREATE TABLE `BookLoaned` (
-		  `loanID` INTEGER NOT NULL,
-		   `bookColl` TEXT NOT NULL,
-		    FOREIGN KEY(`loanID`) REFERENCES `Loans`(`ID`),
-		     FOREIGN KEY(`bookColl`) REFERENCES `Books`(`ISBN`) )";
-		*/
 		String sql = "INSERT INTO Loans(client,dataS,dataE,dataR,returned) VALUES(?,?,?,?,?)";
 		//String sqlID = "SELECT last_insert_rowid()";
 		String sqlBook = "INSERT INTO BookLoaned(loanID,bookColl) VALUES(?,?)";
@@ -1088,9 +1072,9 @@ public class DBManager {
             int upcount = 0;
             for(Book B : L.getBooks()){
             	pstmB.setInt(1,returnedID);
-            	pstmB.setString(2, B.getISBN());
+            	pstmB.setString(2, B.getCollocation());
             	upcount = pstmB.executeUpdate();
-            	Logger.debug(B.getISBN() + " aggiunto? ["+upcount+"]");
+            	Logger.debug(B.getCollocation() + " aggiunto? ["+upcount+"]");
             }
             
         } catch (SQLException e) {
@@ -1212,6 +1196,8 @@ public class DBManager {
 			pstmt.setString(4, "%"+name+"%");
 			pstmt.setString(5, "%"+( (classe<=0)?"":classe )+"%");
 			pstmt.setString(6, "%"+sezione+"%");
+			
+			Logger.debug("\n\t"+sql);
 			
 			ResultSet rs = pstmt.executeQuery();
 			

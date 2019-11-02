@@ -73,7 +73,8 @@ public class SearchLoan extends JFrame implements IRemoteUpdate{
 			@Override
 			public void windowClosing(WindowEvent e) {
 				Logger.debug("FRAME ["+getTitle()+"] IN CHIUSURA");
-				parent.signalFrameClosed(getTitle());
+				if(parent!=null)
+					parent.signalFrameClosed(getTitle());
 				HttpHandler.getInstance().unregisterUI(SearchLoan.this);
 				e.getWindow().dispose();
 			}
@@ -174,7 +175,8 @@ public class SearchLoan extends JFrame implements IRemoteUpdate{
 		JButton B_close = new JButton("Chiudi");
 		B_close.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				parent.signalFrameClosed(getTitle());
+				if(parent!=null)
+					parent.signalFrameClosed(getTitle());
 				HttpHandler.getInstance().unregisterUI(SearchLoan.this);
 				dispose();
 			}
@@ -249,13 +251,8 @@ public class SearchLoan extends JFrame implements IRemoteUpdate{
 			if (r != 0)
 				return;
 
-			resultTable = new JTable(DBManager.generateOngoingLoanTableModel(!CBX_resolved.isSelected())// NB devo
-																										// negare il
-																										// valore perchè
-																										// il parametro
-																										// indica una
-																										// cosa diversa!
-			);
+			//Il parametro va negato perchè indica il contrario.
+			resultTable = new JTable(DBManager.generateOngoingLoanTableModel(!CBX_resolved.isSelected()));
 
 		} else {
 			String tmp = (String) CB_classe.getSelectedItem();
