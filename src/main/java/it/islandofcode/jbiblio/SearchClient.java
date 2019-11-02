@@ -10,6 +10,7 @@ import org.tinylog.Logger;
 
 import it.islandofcode.jbiblio.artefact.Client;
 import it.islandofcode.jbiblio.db.DBManager;
+import it.islandofcode.jbiblio.db.ReadOnlyTableModel;
 
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -154,15 +155,14 @@ public class SearchClient extends JFrame {
 		B_editSelected = new JButton("Modifica cliente");
 		B_editSelected.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (resultTable == null)
-					return;
-				if (resultTable.getSelectedRow() < 0) {
+				if (resultTable==null || resultTable.getSelectedRow() < 0) {
 					JOptionPane.showMessageDialog(contentPane, "Nessuna riga selezionata", "Attenzione!",
 							JOptionPane.WARNING_MESSAGE);
 				} else {
 					DefaultTableModel M = (DefaultTableModel) resultTable.getModel();
 					int row = resultTable.getSelectedRow();
-					int ID = (int) M.getValueAt(row, 0); // suppongo che ISBN sia sempre all'inizio!
+					//int ID = (int) M.getValueAt(row, 0); // suppongo che ID sia sempre all'inizio!
+					int ID = (int) M.getValueAt(row, ReadOnlyTableModel.indexOfColumnByName(M, "ID"));
 
 					if (DBManager.getClientByID(ID).isRemoved()) {
 						JOptionPane.showMessageDialog(contentPane, "Il cliente scelto non è più disponibile!",
@@ -178,15 +178,14 @@ public class SearchClient extends JFrame {
 		B_createLoan = new JButton("Crea prestito");
 		B_createLoan.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (resultTable == null)
-					return;
-				if (resultTable.getSelectedRow() < 0) {
+				if (resultTable==null || resultTable.getSelectedRow() < 0) {
 					JOptionPane.showMessageDialog(contentPane, "Nessuna riga selezionata", "Attenzione!",
 							JOptionPane.WARNING_MESSAGE);
 				} else {
 					DefaultTableModel M = (DefaultTableModel) resultTable.getModel();
 					int row = resultTable.getSelectedRow();
-					int ID = (int) M.getValueAt(row, 0); // suppongo che ISBN sia sempre all'inizio!
+					//int ID = (int) M.getValueAt(row, 0); // suppongo che ID sia sempre all'inizio!
+					int ID = (int) M.getValueAt(row, ReadOnlyTableModel.indexOfColumnByName(M, "ID"));
 
 					Client C = DBManager.getClientByID(ID);
 
@@ -208,15 +207,14 @@ public class SearchClient extends JFrame {
 		B_removeSelected = new JButton("Rimuovi cliente");
 		B_removeSelected.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (resultTable == null)
-					return;
-				if (resultTable.getSelectedRow() < 0) {
+				if (resultTable==null || resultTable.getSelectedRow() < 0) {
 					JOptionPane.showMessageDialog(contentPane, "Nessuna riga selezionata", "Attenzione!",
 							JOptionPane.WARNING_MESSAGE);
 				} else {
 					DefaultTableModel M = (DefaultTableModel) resultTable.getModel();
 					int row = resultTable.getSelectedRow();
-					int ID = (int) M.getValueAt(row, 0); // suppongo che ISBN sia sempre all'inizio!
+					//int ID = (int) M.getValueAt(row, 0); // suppongo che ID sia sempre all'inizio!
+					int ID = (int) M.getValueAt(row, ReadOnlyTableModel.indexOfColumnByName(M, "ID"));
 
 					Client C = DBManager.getClientByID(ID);
 

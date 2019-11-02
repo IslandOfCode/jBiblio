@@ -122,18 +122,13 @@ public class SearchBook extends JFrame implements IRemoteUpdate{
 		B_editSelected = new JButton("Modifica libro");
 		B_editSelected.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if(resultTable==null) return;
-				if(resultTable.getSelectedRow()<0) {
+				if(resultTable==null || resultTable.getSelectedRow()<0) {
 					JOptionPane.showMessageDialog(contentPane, "Nessuna riga selezionata", "Attenzione!", JOptionPane.WARNING_MESSAGE);
 				} else {
 					DefaultTableModel M = (DefaultTableModel) resultTable.getModel();
 					int row = resultTable.getSelectedRow();
 					int col = ReadOnlyTableModel.indexOfColumnByName(M, "Coll.");
-					if(col<0) {
-						Logger.error("INDEX NOT FOUND FOR COLUMN [Coll.]");
-						JOptionPane.showMessageDialog(contentPane, "Contattare lo sviluppatore.", "Errore interno!!", JOptionPane.ERROR_MESSAGE);
-						return;
-					}
+
 					String COLL = (String) M.getValueAt(row, col);
 					
 					if(DBManager.checkCollocationRemoved(COLL)) {
@@ -150,8 +145,7 @@ public class SearchBook extends JFrame implements IRemoteUpdate{
 		B_removeSelected = new JButton("Rimuovi libro");
 		B_removeSelected.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if(resultTable==null) return;
-				if(resultTable.getSelectedRow()<0) {
+				if(resultTable==null || resultTable.getSelectedRow()<0) {
 					JOptionPane.showMessageDialog(contentPane, "Nessuna riga selezionata", "Attenzione!", JOptionPane.WARNING_MESSAGE);
 				} else {
 					DefaultTableModel M = (DefaultTableModel) resultTable.getModel();

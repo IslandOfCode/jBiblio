@@ -4,12 +4,16 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
+
+import it.islandofcode.jbiblio.stats.LoadingUI;
 
 public class ConfirmLoan extends JDialog {
 
@@ -65,7 +69,29 @@ public class ConfirmLoan extends JDialog {
 		
 		
 		L_code.setText("# "+loanCode);
+		
+		JButton btnStampaRicevuta = new JButton("Stampa ricevuta");
+		btnStampaRicevuta.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String basePath = System.getProperty("user.home") + "/Desktop";
+				JFileChooser chooser = new JFileChooser();
+				chooser.setCurrentDirectory(new File(basePath));
+				chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				chooser.setDialogTitle("Salva ricevuta prestito");				
+				int res = chooser.showSaveDialog(getContentPane());
+				
+				if(res!=JFileChooser.APPROVE_OPTION) {
+					return;
+				}
+
+				File destination = new File(chooser.getSelectedFile().getAbsolutePath());
+								
+				new LoadingUI(null, LoadingUI.WORKTYPE.LOAN, destination, loanCode);
+			}
+		});
+		btnStampaRicevuta.setFont(new Font("Dialog", Font.BOLD, 14));
+		btnStampaRicevuta.setBounds(10, 193, 156, 26);
+		getContentPane().add(btnStampaRicevuta);
 
 	}
-
 }

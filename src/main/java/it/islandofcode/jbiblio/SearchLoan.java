@@ -14,6 +14,7 @@ import it.islandofcode.jbiblio.companioapp.HttpHandler;
 import it.islandofcode.jbiblio.companioapp.IRemoteUpdate;
 import it.islandofcode.jbiblio.companioapp.HttpHandler.REGISTER_MODE;
 import it.islandofcode.jbiblio.db.DBManager;
+import it.islandofcode.jbiblio.db.ReadOnlyTableModel;
 
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -184,16 +185,19 @@ public class SearchLoan extends JFrame implements IRemoteUpdate{
 			public void actionPerformed(ActionEvent e) {
 				JTable resultTable = (JTable) SP_result.getViewport().getView();
 
-				if (resultTable.getSelectedRow() < 0) {
+				if (resultTable==null || resultTable.getSelectedRow() < 0) {
 					JOptionPane.showMessageDialog(contentPane, "Nessuna riga selezionata", "Attenzione!",
 							JOptionPane.WARNING_MESSAGE);
 					return;
 				}
 				DefaultTableModel M = (DefaultTableModel) resultTable.getModel();
 				int row = resultTable.getSelectedRow();
-				int code = (int) M.getValueAt(row, 0); // suppongo che ID sia sempre all'inizio!
+				//int code = (int) M.getValueAt(row, 0); // suppongo che ID sia sempre all'inizio!
 				
-				String status = (String) M.getValueAt(row, M.getColumnCount()-1); //suppongo che lo stato sia sempre alla fine
+				int code = (int) M.getValueAt(row, ReadOnlyTableModel.indexOfColumnByName(M, "Codice Prestito"));
+				String status = (String) M.getValueAt(row, ReadOnlyTableModel.indexOfColumnByName(M, "Stato prestito"));
+				
+				//String status = (String) M.getValueAt(row, M.getColumnCount()-1); //suppongo che lo stato sia sempre alla fine
 				
 				if(status.toLowerCase().contains("risolto")) {
 					JOptionPane.showMessageDialog(contentPane, "Non puoi risolvere un prestito già risolto!", "Attenzione!",
@@ -212,14 +216,15 @@ public class SearchLoan extends JFrame implements IRemoteUpdate{
 			public void actionPerformed(ActionEvent e) {
 				JTable resultTable = (JTable) SP_result.getViewport().getView();
 
-				if (resultTable.getSelectedRow() < 0) {
+				if (resultTable==null || resultTable.getSelectedRow() < 0) {
 					JOptionPane.showMessageDialog(contentPane, "Nessuna riga selezionata", "Attenzione!",
 							JOptionPane.WARNING_MESSAGE);
 					return;
 				}
 				DefaultTableModel M = (DefaultTableModel) resultTable.getModel();
 				int row = resultTable.getSelectedRow();
-				int code = (int) M.getValueAt(row, 0); // suppongo che ID sia sempre all'inizio!
+				//int code = (int) M.getValueAt(row, 0); // suppongo che ID sia sempre all'inizio!
+				int code = (int) M.getValueAt(row, ReadOnlyTableModel.indexOfColumnByName(M, "Codice Prestito"));
 
 				new ResolveLoan(null, code, true);
 			}

@@ -339,7 +339,7 @@ public class GUI implements IRemoteUpdate{
 
 				File destination = new File(chooser.getSelectedFile().getAbsolutePath());
 								
-				new LoadingUI(GUI.this.FRAME, LoadingUI.WORKTYPE.BOOKSLIST, destination);
+				new LoadingUI(GUI.this.FRAME, LoadingUI.WORKTYPE.BOOKSLIST, destination, -1);
 			}
 		});
 		M_printBookList.setIcon(new ImageIcon(GUI.class.getResource("/icon/genera.png")));
@@ -361,7 +361,7 @@ public class GUI implements IRemoteUpdate{
 
 				File destination = new File(chooser.getSelectedFile().getAbsolutePath());
 								
-				new LoadingUI(GUI.this.FRAME, LoadingUI.WORKTYPE.STATISTICS, destination);
+				new LoadingUI(GUI.this.FRAME, LoadingUI.WORKTYPE.STATISTICS, destination, -1);
 			}
 		});
 		M_printGenericStats.setIcon(new ImageIcon(GUI.class.getResource("/icon/genera.png")));

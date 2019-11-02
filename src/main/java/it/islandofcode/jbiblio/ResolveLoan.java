@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.util.Vector;
 
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -26,8 +27,11 @@ import it.islandofcode.jbiblio.artefact.Client;
 import it.islandofcode.jbiblio.artefact.Loan;
 import it.islandofcode.jbiblio.db.DBDate;
 import it.islandofcode.jbiblio.db.DBManager;
+import it.islandofcode.jbiblio.stats.LoadingUI;
+
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
 
 public class ResolveLoan extends JFrame {
 
@@ -242,6 +246,29 @@ public class ResolveLoan extends JFrame {
 		TXT_returnedLoan.setBounds(124, 106, 96, 20);
 		contentPane.add(TXT_returnedLoan);
 		
+		JButton B_printReceipt = new JButton("Stampa PDF");
+		B_printReceipt.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String basePath = System.getProperty("user.home") + "/Desktop";
+				JFileChooser chooser = new JFileChooser();
+				chooser.setCurrentDirectory(new File(basePath));
+				chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				chooser.setDialogTitle("Salva ricevuta prestito");				
+				int res = chooser.showSaveDialog(getContentPane());
+				
+				if(res!=JFileChooser.APPROVE_OPTION) {
+					return;
+				}
+
+				File destination = new File(chooser.getSelectedFile().getAbsolutePath());
+								
+				new LoadingUI(null, LoadingUI.WORKTYPE.LOAN, destination, Integer.parseInt(TXT_idLoan.getText().trim()) );
+			}
+		});
+		B_printReceipt.setFont(new Font("Dialog", Font.PLAIN, 12));
+		B_printReceipt.setBounds(164, 269, 113, 24);
+		contentPane.add(B_printReceipt);
+		
 		if(parent!=null)
 			this.parent.signalFrameOpened(getTitle());
 		
@@ -262,7 +289,11 @@ public class ResolveLoan extends JFrame {
 			
 			if(viewOnly || L.getReturned()!=0) {
 				setViewOnlyMode();
+			} else {
+				contentPane.remove(B_printReceipt);
 			}
+		} else {
+			contentPane.remove(B_printReceipt);
 		}
 
 		this.setVisible(true);

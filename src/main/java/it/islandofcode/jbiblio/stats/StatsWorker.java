@@ -24,6 +24,8 @@ import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
 import it.islandofcode.jbiblio.artefact.Book;
+import it.islandofcode.jbiblio.artefact.Client;
+import it.islandofcode.jbiblio.artefact.Loan;
 import it.islandofcode.jbiblio.db.DBManager;
 import it.islandofcode.jbiblio.settings.Settings;
 import it.islandofcode.jbiblio.stats.LoadingUI.WORKTYPE;
@@ -32,13 +34,24 @@ public class StatsWorker extends SwingWorker<Object, Object> {
 	
 	private static final String BOOKSLIST_FILE = "listalibri.ftl";
 	private static final String STATISTICS_FILE = "statistiche.ftl";
+	private static final String RECEIPT_FILE = "ricevuta.ftl";
 	
 	private WORKTYPE work;
 	private File destination;
 	
+	private Client client;
+	private Loan loan;
+	
 	public StatsWorker(WORKTYPE work, File destination) {
 		this.work = work;
 		this.destination = new File(destination.getAbsolutePath()+File.separator+generateFileName(work));
+	}
+	
+	public StatsWorker(WORKTYPE work, File destination, Client C, Loan L) {
+		this.work = work;
+		this.destination = new File(destination.getAbsolutePath()+File.separator+generateFileName(work));
+		this.client = C;
+		this.loan = L;
 	}
 
 	@Override
@@ -48,12 +61,18 @@ public class StatsWorker extends SwingWorker<Object, Object> {
 		Configuration cfg = new Configuration(Configuration.VERSION_2_3_29);
 		
 		File template = null;
-		if(this.work.equals(WORKTYPE.BOOKSLIST)) {
+		switch(work) {
+		case BOOKSLIST:
 			template = extract2tempFile(BOOKSLIST_FILE);
-		} else {
+			break;
+		case STATISTICS:
 			template = extract2tempFile(STATISTICS_FILE);
+			break;
+		case LOAN:
+			template = extract2tempFile(RECEIPT_FILE);
+			break;
 		}
-		
+
 		cfg.setDirectoryForTemplateLoading(template.toPath().getParent().toFile());
 
 		cfg.setDefaultEncoding("ISO-8859-1");// ("UTF-8");
@@ -62,12 +81,18 @@ public class StatsWorker extends SwingWorker<Object, Object> {
 		cfg.setWrapUncheckedExceptions(true);
 		
 		Map<String, Object> root = null;
-		if(this.work.equals(WORKTYPE.BOOKSLIST)) {
+		switch(work) {
+		case BOOKSLIST:
 			root = populateBooksList();
-		} else {
+			break;
+		case STATISTICS:
 			root = populateStatistics();
+			break;
+		case LOAN:
+			root = populateReceiptLoan();
+			break;
 		}
-		
+
 		//Altre variabili, in comune ad entrambi i template
 		root.put("titoloOwner", Settings.getValue(Settings.PROPERTIES.TITOLO_RESPONSABILE));
 		root.put("nomeOwner", Settings.getValue(Settings.PROPERTIES.NOME_RESPONSABILE));
@@ -138,6 +163,9 @@ public class StatsWorker extends SwingWorker<Object, Object> {
 			break;
 		case STATISTICS:
 			toret =  "STATISTICHE_"+LocalDate.now().toString().replace("-", ".")+".pdf";
+			break;
+		case LOAN:
+			toret =  "PRESTITO_"+loan.getID()+"_"+client.getCognome()+".pdf";
 			break;
 		default:
 			toret = "SCONOSCIUTO_"+LocalDate.now().toString().replace("-", ".")+".pdf";
@@ -260,4 +288,27 @@ public class StatsWorker extends SwingWorker<Object, Object> {
 		return radix;
 	}
 
+	private Map<String, Object> populateReceiptLoan(){
+		Map<String, Object> radix = new HashMap<>();
+		List<Book> books = this.loan.getBooks();
+
+		radix.put("nameClient", client.getCognome()+", "+client.getNome());
+		radix.put("classClient", client.getClasse()+client.getSezione());
+		radix.put("dateStart", loan.getDateStart());
+		radix.put("dateEnd", loan.getDateEnd());
+		radix.put("codeLoan", loan.getID());
+		
+		String status ="Attivo";
+		if(loan.getDateReturned()!=null && !loan.getDateReturned().isEmpty()) {
+			status = "Risolto";
+			if(loan.getDateEnd().compareTo(loan.getDateReturned())>0){
+				status += " in ritardo";
+			}
+		}
+		radix.put("statusLoan", status);
+		
+		radix.put("listaLibri", books);
+
+		return radix;
+	}
 }
