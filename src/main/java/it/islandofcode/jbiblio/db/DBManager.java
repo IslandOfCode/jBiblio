@@ -1018,7 +1018,7 @@ public class DBManager {
 	}
 
 	public static boolean checkIfBookLoaned(String ISBN, String collocation) {
-		String sql = "select BookLoaned.bookColl as 'ISBN', Books.collocation as 'collocation' from Loans inner join ( BookLoaned inner join Books on BookLoaned.bookColl = Books.collocation) on Loans.ID = BookLoaned.loanID where Loans.returned=0 and (BookLoaned.bookColl=? or Books.collocation=?)";
+		String sql = "select BookLoaned.bookColl from Loans inner join ( BookLoaned inner join Books on BookLoaned.bookColl = Books.collocation) on Loans.ID = BookLoaned.loanID where Loans.returned=0 and (BookLoaned.bookColl=? or Books.collocation=?)";
 		
 		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql);) {
 
@@ -1133,6 +1133,29 @@ public class DBManager {
 			Logger.error(e);
 		}
 		return null;
+	}
+	
+	public static List<Loan> getLoansOfClient(int clientID, boolean active){
+		List<Loan> AL = new ArrayList<>();
+		
+		String sql = "select Loans.ID from Loans inner join Clients on Loans.client = Clients.ID where Clients.ID = ? and Loans.returned=?";
+
+		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql);) {
+			
+			pstmt.setInt(1, clientID);
+			pstmt.setInt(2, (active)?0:1 );
+			
+			ResultSet rs = pstmt.executeQuery();
+			
+			while(rs.next()) {
+				AL.add(	DBManager.getLoan(rs.getInt(1)) );
+			}
+			
+		} catch (SQLException e) {
+			Logger.error(e);
+		}
+
+		return AL;
 	}
 	
 	public static boolean resolveLoan(Loan L) {

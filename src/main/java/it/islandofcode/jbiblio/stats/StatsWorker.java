@@ -302,7 +302,7 @@ public class StatsWorker extends SwingWorker<Object, Object> {
 		String status ="Attivo";
 		if(loan.getDateReturned()!=null && !loan.getDateReturned().isEmpty()) {
 			status = "Risolto";
-			if(loan.getDateEnd().compareTo(loan.getDateReturned())>0){
+			if(loan.getDateEnd().compareTo(loan.getDateReturned())<0){
 				status += " in ritardo";
 			}
 		}

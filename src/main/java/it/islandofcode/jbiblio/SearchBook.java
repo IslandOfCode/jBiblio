@@ -156,16 +156,24 @@ public class SearchBook extends JFrame implements IRemoteUpdate{
 					DefaultTableModel M = (DefaultTableModel) resultTable.getModel();
 					int row = resultTable.getSelectedRow();
 					int col = ReadOnlyTableModel.indexOfColumnByName(M, "Coll.");
-					if(col<0) {
-						Logger.error("INDEX NOT FOUND FOR COLUMN [Coll.]");
-						JOptionPane.showMessageDialog(contentPane, "Contattare lo sviluppatore.", "Errore interno!!", JOptionPane.ERROR_MESSAGE);
-						return;
-					}
+					int isbn = ReadOnlyTableModel.indexOfColumnByName(M, "ISBN");
 					String COLL = (String) M.getValueAt(row, col);
+					String ISBN = (String) M.getValueAt(row, isbn);
 					
 					if(DBManager.checkCollocationRemoved(COLL)) {
 						JOptionPane.showMessageDialog(contentPane, "Il libro scelto è già stato rimosso!", "Attenzione!", JOptionPane.WARNING_MESSAGE);
 						return;
+					}
+					
+					if(DBManager.checkIfBookLoaned(ISBN, COLL)) {
+						r = JOptionPane.showConfirmDialog(rootPane,
+								"<html>Il libro è presente in un prestito attivo.<br/>"
+								+ "Se rimosso, potresti creare una situazione anomala.<br/>"
+								+ "E' consigliabile risolvere prima il prestito attivo e poi procedere alla sua rimozione.<br/>"
+								+ "<b>Vuoi davvero continuare?</b>",
+								"Attenzione!", JOptionPane.YES_NO_OPTION);
+						if (r != 0)
+							return;
 					}
 					
 					int ret = DBManager.removeBook(COLL);

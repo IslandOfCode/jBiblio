@@ -9,6 +9,7 @@ import javax.swing.table.DefaultTableModel;
 import org.tinylog.Logger;
 
 import it.islandofcode.jbiblio.artefact.Client;
+import it.islandofcode.jbiblio.artefact.Loan;
 import it.islandofcode.jbiblio.db.DBManager;
 import it.islandofcode.jbiblio.db.ReadOnlyTableModel;
 
@@ -25,6 +26,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.List;
 
 public class SearchClient extends JFrame {
 
@@ -208,39 +210,53 @@ public class SearchClient extends JFrame {
 		B_removeSelected = new JButton("Rimuovi cliente");
 		B_removeSelected.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (resultTable==null || resultTable.getSelectedRow() < 0) {
+				if (resultTable == null || resultTable.getSelectedRow() < 0) {
 					JOptionPane.showMessageDialog(contentPane, "Nessuna riga selezionata", "Attenzione!",
 							JOptionPane.WARNING_MESSAGE);
-				} else {
-					int r = JOptionPane.showConfirmDialog(rootPane, "<html>Il cliente non potrà essere più recuperato una volta rimosso.<br/>Confermi la rimozione?", "Conferma rimozione", JOptionPane.YES_NO_OPTION);
-					if(r!=0) return;
-					
-					
-					
-					DefaultTableModel M = (DefaultTableModel) resultTable.getModel();
-					int row = resultTable.getSelectedRow();
-					//int ID = (int) M.getValueAt(row, 0); // suppongo che ID sia sempre all'inizio!
-					int ID = (int) M.getValueAt(row, ReadOnlyTableModel.indexOfColumnByName(M, "ID"));
-
-					Client C = DBManager.getClientByID(ID);
-
-					if (C.isRemoved()) {
-						JOptionPane.showMessageDialog(contentPane, "Il cliente scelto è già stato rimosso!",
-								"Attenzione!", JOptionPane.WARNING_MESSAGE);
-						return;
-					}
-
-					int ret = DBManager.removeClient(C.getID());
-
-					if (ret < 0) {
-						JOptionPane.showMessageDialog(contentPane, "Non è stato possibile rimuovere il cliente.",
-								"Errore DataBase!", JOptionPane.ERROR_MESSAGE);
-						return;
-					}
-
-					JOptionPane.showMessageDialog(contentPane, "Il cliente scelto è stato rimosso!",
-							"Operazione completata", JOptionPane.INFORMATION_MESSAGE);
+					return;
 				}
+				int r = JOptionPane.showConfirmDialog(rootPane,
+						"<html>Il cliente non potrà essere più recuperato una volta rimosso.<br/>Confermi la rimozione?",
+						"Conferma rimozione", JOptionPane.YES_NO_OPTION);
+				if (r != 0)
+					return;
+
+				DefaultTableModel M = (DefaultTableModel) resultTable.getModel();
+				int row = resultTable.getSelectedRow();
+				// int ID = (int) M.getValueAt(row, 0); // suppongo che ID sia sempre
+				// all'inizio!
+				int ID = (int) M.getValueAt(row, ReadOnlyTableModel.indexOfColumnByName(M, "ID"));
+
+				Client C = DBManager.getClientByID(ID);
+
+				if (C.isRemoved()) {
+					JOptionPane.showMessageDialog(contentPane, "Il cliente scelto è già stato rimosso!", "Attenzione!",
+							JOptionPane.WARNING_MESSAGE);
+					return;
+				}
+				
+				List<Loan> CL = DBManager.getLoansOfClient(C.getID(),true);
+				if(CL.size()>0) {
+					r = JOptionPane.showConfirmDialog(rootPane,
+							"<html>Il cliente ha <b>"+CL.size()+"</b> prestiti attivi al momento.<br/>"
+							+ "Se rimosso, potresti creare una situazione anomala.<br/>"
+							+ "E' consigliabile risolvere prima i prestiti attivi e poi procedere alla rimozione.<br/>"
+							+ "<b>Vuoi davvero continuare?</b>",
+							"Attenzione!", JOptionPane.YES_NO_OPTION);
+					if (r != 0)
+						return;
+				}
+
+				int ret = DBManager.removeClient(C.getID());
+
+				if (ret < 0) {
+					JOptionPane.showMessageDialog(contentPane, "Non è stato possibile rimuovere il cliente.",
+							"Errore DataBase!", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+
+				JOptionPane.showMessageDialog(contentPane, "Il cliente scelto è stato rimosso!",
+						"Operazione completata", JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
 		P_command.add(B_removeSelected);
