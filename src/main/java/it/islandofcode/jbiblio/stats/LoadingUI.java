@@ -16,13 +16,18 @@ import javax.swing.SwingConstants;
 
 import org.tinylog.Logger;
 
+import it.islandofcode.jbiblio.artefact.Client;
+import it.islandofcode.jbiblio.artefact.Loan;
+import it.islandofcode.jbiblio.db.DBManager;
+
 public class LoadingUI extends JDialog {
 
 	private static final long serialVersionUID = 1L;
 	
 	public static enum WORKTYPE {
 		BOOKSLIST,
-		STATISTICS
+		STATISTICS,
+		LOAN
 	}
 	
 	private JProgressBar progressBar;
@@ -30,7 +35,7 @@ public class LoadingUI extends JDialog {
 	/**
 	 * Create the dialog.
 	 */
-	public LoadingUI(JFrame parent, WORKTYPE work, File destination) {
+	public LoadingUI(JFrame parent, WORKTYPE work, File destination, int LoanCode) {
 		getContentPane().setBackground(new Color(255, 228, 196));
 		setUndecorated(true);
 		setType(Type.UTILITY);
@@ -57,8 +62,23 @@ public class LoadingUI extends JDialog {
 		pack();
 		setLocationRelativeTo(parent);
 		
-			
-		StatsWorker SW = new StatsWorker(work, destination);
+		
+		StatsWorker SW;
+		if(LoanCode>=0) {
+			Loan L = DBManager.getLoan(LoanCode);
+			if(L==null) {
+				JOptionPane.showMessageDialog(getContentPane(), "Il prestito con codice "+LoanCode+" non è stato trovato!", "Errore critico!", JOptionPane.ERROR_MESSAGE);
+				dispose();
+			}
+			Client C = DBManager.getClientByID(L.getClient());
+			if(C==null) {
+				JOptionPane.showMessageDialog(getContentPane(), "Il cliente con codice "+L.getClient()+" non è stato trovato!", "Errore critico!", JOptionPane.ERROR_MESSAGE);
+				dispose();
+			}
+			SW = new StatsWorker(work,destination,C,L);
+		} else {
+			SW = new StatsWorker(work, destination);
+		}
 		
 		SW.addPropertyChangeListener(new PropertyChangeListener() {
 			public void propertyChange(PropertyChangeEvent e) {

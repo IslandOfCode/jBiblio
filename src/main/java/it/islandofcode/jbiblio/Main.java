@@ -33,7 +33,17 @@ public class Main {
 						"Errore!", JOptionPane.ERROR_MESSAGE);
 				System.exit(1);
 			}
-				
+		} else {
+			int ver = DBManager.getUserVersion();
+			if(ver!=DBManager.USER_VERSION) {
+				Logger.error("USER_VERSION non coincide. Trovato "+ver+", atteso "+DBManager.USER_VERSION);
+				JOptionPane.showMessageDialog(null, "<html>Non è stato possibile utilizzare il database corrente.<br/>"
+						+ "Probabilmente il programma è stato aggiornato e non è in grado di usare il vecchio database.<br/>"
+						+ "Per favore contatta lo sviluppatore per ulteriori istruzioni.<br/>"
+						+ "<center><b>ERRORE: </b><code>Trovato "+ver+", atteso "+DBManager.USER_VERSION+"</code></center></html>",
+						"Errore!", JOptionPane.ERROR_MESSAGE);
+				System.exit(1);
+			}
 		}
 		
 		if(!Settings.propFileExist()) {

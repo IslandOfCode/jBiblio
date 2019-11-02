@@ -235,15 +235,7 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 			R.add(3, B.getCollocation());
 			data.add(R);
 		}
-		
-		//impedisci la modifica delle celle
-		/*DefaultTableModel DTM = new DefaultTableModel() {
-			private static final long serialVersionUID = 1L;
 
-			public boolean isCellEditable(int rowIndex, int mColIndex) {
-		        return false;
-		      }
-		};*/
 		DefaultTableModel DTM = new ReadOnlyTableModel();
 		
 		DTM.setColumnIdentifiers(columnNames);
@@ -253,21 +245,28 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 	}
 	
 	private void searchAction() {
-
-		if(TXT_ISBN.getText().trim().isEmpty() || TXT_collocation.getText().trim().isEmpty()) {
-			JOptionPane.showMessageDialog(contentPane, "Entrambi i campi sono necessari per la ricerca.", "Attenzione!", JOptionPane.WARNING_MESSAGE);	
+		Book B = null;
+		String ISBN = TXT_ISBN.getText().trim();
+		String COLL = TXT_collocation.getText().trim().toUpperCase();
+				
+		if(!ISBN.isEmpty() && !COLL.isEmpty()) { //ENTRAMBI
+			B = DBManager.getSpecificBook(ISBN, COLL);
+		} else if(!ISBN.isEmpty() && COLL.isEmpty()) { //SOLO ISBN
+			List<Book> BL = DBManager.getBookListByISBN(ISBN);
+			if(BL.size()==1) { //c'è un unico libro con quell'isbn
+				B = BL.get(0);
+			} else if(BL.size()>1) { //c'è più di una copia dello stesso libro
+				JOptionPane.showMessageDialog(contentPane, "<html>Esiste più di un libro con questo ISBN.<br/><b>Specificare anche la collocazione.", "Attenzione!", JOptionPane.WARNING_MESSAGE);	
+				return;
+			}
+			//else B rimane uguale a null, viene gestito sotto
+		} else if(ISBN.isEmpty() && !COLL.isEmpty()) { //SOLO COLLOCAZIONE
+			B = DBManager.getBookByCollocation(COLL);
+		} else { //NESSUNO DEI DUE
+			JOptionPane.showMessageDialog(contentPane, "Nessuna informazione inserita", "Attenzione!", JOptionPane.WARNING_MESSAGE);	
 			return;
 		}
-		Book B = DBManager.getThatPreciseBook(TXT_ISBN.getText().trim(), TXT_collocation.getText().trim().toUpperCase());
-		/*
-			B = DBManager.getBookByISBN(TXT_ISBN.getText().trim());
-		else if (!TXT_collocation.getText().trim().isEmpty())
-			B = DBManager.getBookByCollocation(TXT_collocation.getText().trim().toUpperCase());
-		else {
-			JOptionPane.showMessageDialog(contentPane, "Uno dei due campi è necessario per la ricerca.", "Attenzione!", JOptionPane.WARNING_MESSAGE);	
-			return;
-		}*/
-		
+				
 		if(B==null) {
 			JOptionPane.showMessageDialog(contentPane, "Nessun libro corrispondente trovato!", "Attenzione!", JOptionPane.WARNING_MESSAGE);
 			return;
@@ -278,14 +277,14 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 			return;
 		}
 		
-		if(DBManager.checkIfBookLoaned(TXT_ISBN.getText().trim(), TXT_collocation.getText().trim().toUpperCase())) {
+		if(DBManager.checkIfBookLoaned(ISBN, COLL)) {
 			JOptionPane.showMessageDialog(contentPane, "Il libro scelto è già in prestito.", "Attenzione!", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
 		
 		//cerca un duplicato nella lista
 		Book dup = searched.stream()
-				.filter(b-> (b.getISBN().equals(TXT_ISBN.getText().trim())||b.getCollocation().equals(TXT_collocation.getText().trim().toUpperCase())) )
+				.filter(b-> (b.getISBN().equals(ISBN)||b.getCollocation().equals(COLL)) )
 				.findFirst()
 				.orElse(null);
 		if(dup!=null) {

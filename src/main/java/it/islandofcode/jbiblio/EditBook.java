@@ -221,7 +221,7 @@ public class EditBook extends JFrame implements IRemoteUpdate{
 			B_addBook.setText("Aggiungi libro");
 			break;
 		case EDIT:
-			book = DBManager.getBookByISBN(ID);
+			book = DBManager.getBookByCollocation(ID);
 			
 			populateForm();
 			

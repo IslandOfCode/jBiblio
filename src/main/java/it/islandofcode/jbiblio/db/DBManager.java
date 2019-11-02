@@ -28,6 +28,7 @@ public class DBManager {
 
 	public static final String DBFILEPATH = "db/";
 	public static final String DBFILENAME = "jbiblio.db";
+	public static final int USER_VERSION = 10;
 	
 	public static void createDB() {
 		String URL = "jdbc:sqlite:"+DBFILEPATH+DBFILENAME;
@@ -46,21 +47,25 @@ public class DBManager {
 	public static final void initDB() {		
 		String URL = "jdbc:sqlite:"+DBFILEPATH+DBFILENAME;
 
-		//String BOOKS = "CREATE TABLE `Books` ( `ISBN` TEXT NOT NULL UNIQUE, `title` TEXT, `author` TEXT, `publisher` TEXT, `publishdate` TEXT, `thumbnail` TEXT, `collocation` TEXT, `removed` INTEGER NOT NULL DEFAULT 0 );";
-		String BOOKS = "CREATE TABLE `Books` ( `ISBN` TEXT NOT NULL, `title` TEXT, `author` TEXT, `publisher` TEXT, `publishdate` TEXT, `thumbnail` TEXT, `collocation` TEXT NOT NULL UNIQUE, `removed` INTEGER NOT NULL DEFAULT 0 );";
+		String BOOKS = "CREATE TABLE \"Books\" ( `ISBN` TEXT NOT NULL, `title` TEXT, `author` TEXT, `publisher` TEXT, `publishdate` TEXT, `thumbnail` TEXT, `collocation` TEXT NOT NULL UNIQUE, `removed` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`collocation`) )";
 		String CLIENTS = "CREATE TABLE `Clients` ( `ID` INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, `nome` TEXT, `cognome` TEXT, `classe` INTEGER, `sezione` TEXT, `removed` INTEGER NOT NULL DEFAULT 0 );";
-		String LOANS = "CREATE TABLE \"Loans\" ( `ID` INTEGER PRIMARY KEY AUTOINCREMENT, `client` INTEGER, `dataS` TEXT, `dataE` TEXT, `dataR` TEXT, `returned` INTEGER NOT NULL DEFAULT 0, FOREIGN KEY(`client`) REFERENCES `Clients`(`ID`) )";
-		String BOOKLOANED = "CREATE TABLE `BookLoaned` ( `loanID` INTEGER NOT NULL, `bookISBN` TEXT NOT NULL, FOREIGN KEY(`loanID`) REFERENCES `Loans`(`ID`), FOREIGN KEY(`bookISBN`) REFERENCES `Books`(`ISBN`) )";
+		String LOANS = "CREATE TABLE `Loans` ( `ID` INTEGER PRIMARY KEY AUTOINCREMENT, `client` INTEGER, `dataS` TEXT, `dataE` TEXT, `dataR` TEXT, `returned` INTEGER NOT NULL DEFAULT 0, FOREIGN KEY(`client`) REFERENCES `Clients`(`ID`) )";
+		String BOOKLOANED = "CREATE TABLE `BookLoaned` (`loanID` INTEGER NOT NULL,`bookColl` TEXT NOT NULL,FOREIGN KEY(`loanID`) REFERENCES `Loans`(`ID`),FOREIGN KEY(`bookColl`) REFERENCES `Books`(`collocation`));";
         
+		String PRAGMA_USER_VERSION = "PRAGMA user_version=";
+		
         try (Connection conn = DriverManager.getConnection(URL);
                 Statement stmt = conn.createStatement()) {
             stmt.execute(BOOKS);
-            conn.createStatement();
+            //conn.createStatement();
             stmt.execute(CLIENTS);
-            conn.createStatement();
+            //conn.createStatement();
             stmt.execute(LOANS);
-            conn.createStatement();
+            //conn.createStatement();
             stmt.execute(BOOKLOANED);
+            
+            stmt.execute(PRAGMA_USER_VERSION+USER_VERSION);
+            
             stmt.close();
             conn.close();
         } catch (SQLException e) {
@@ -75,6 +80,20 @@ public class DBManager {
             Logger.error(e);
         }
 		return null;
+	}
+	
+	public static int getUserVersion() {
+		String SQL = "PRAGMA user_version";
+		try(Connection c = connectDB()){
+			ResultSet rs = c.createStatement().executeQuery(SQL);
+			
+			if(rs.next()) {
+				return rs.getInt(1);
+			}
+		} catch (SQLException e) {
+			Logger.error(e);
+		}
+		return -1;
 	}
 		
 	private static int countTotalRow(String table, String where) {
@@ -158,7 +177,7 @@ public class DBManager {
 	public static Map<String, Integer> top10Book(int year){
 		HashMap<String, Integer> ret = new HashMap<>();
 		String yy = String.format("%04d", year);		
-		String sql = "select count(BookLoaned.bookISBN) as HOWMANY, Books.ISBN, Books.title, Loans.dataS from BookLoaned inner join Books on BookLoaned.bookISBN=Books.ISBN inner join Loans on BookLoaned.loanID = Loans.ID where strftime('%Y', Loans.dataS) = ? group by bookISBN order by count(bookISBN) desc limit 10;";
+		String sql = "select count(BookLoaned.bookColl) as HOWMANY, Books.ISBN, Books.title, Loans.dataS from BookLoaned inner join Books on BookLoaned.bookColl=Books.collocation inner join Loans on BookLoaned.loanID = Loans.ID where strftime('%Y', Loans.dataS) = ? group by bookColl order by count(bookColl) desc limit 10;";
 		
 		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -269,7 +288,7 @@ public class DBManager {
 	public static DefaultTableModel generateOngoingLoanTableModel(boolean getAll) {
 		//Se devi modificare questa query, accendi un cero ad ogni chiesa nel raggio di 50 km.
 		//Poi, bestemmia.
-		String sql = "select Loans.ID as \"Codice Prestito\", Clients.ID as 'ID Cliente', ( Clients.cognome || \", \" || Clients.nome ) as 'Nominativo', ( Clients.classe || Clients.sezione ) as 'Classe', strftime('%d/%m/%Y',Loans.dataE) as \"Fine prestito\", ( julianday(date('now'))-julianday(Loans.dataE) ) as DAYS_LATE, Loans.returned as 'RETURNED' from Clients inner join Loans on Loans.client=Clients.ID";
+		String sql = "select Loans.ID as 'Codice Prestito', Clients.ID as 'ID Cliente', ( Clients.cognome || \", \" || Clients.nome ) as 'Nominativo', ( Clients.classe || Clients.sezione ) as 'Classe', strftime('%d/%m/%Y',Loans.dataE) as 'Fine prestito', ( julianday(date('now'))-julianday(Loans.dataE) ) as DAYS_LATE, Loans.returned as 'RETURNED' from Clients inner join Loans on Loans.client=Clients.ID";
 		
 		if(getAll)
 			sql += " where Loans.returned=0";
@@ -517,7 +536,7 @@ public class DBManager {
 		return L;
 	}
 	
-	public static Book getBookByISBN(String iSBN) {
+	/*public static Book getBookByISBN(String iSBN) {
 		String sql = "SELECT * FROM Books WHERE ISBN=?";
 		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -546,7 +565,7 @@ public class DBManager {
 			Logger.error(e);
 		}
 		return null;
-	}
+	}*/
 	
 	public static List<Book> getBookListByISBN(String iSBN) {
 		ArrayList<Book> L = new ArrayList<>();
@@ -580,7 +599,7 @@ public class DBManager {
 		} catch (SQLException e) {
 			Logger.error(e);
 		}
-		return null;
+		return L;
 	}
 	
 	public static Book getBookByCollocation(String collocation) {
@@ -614,7 +633,7 @@ public class DBManager {
 		return null;
 	}
 	
-	public static Book getThatPreciseBook(String ISBN, String collocation) {
+	public static Book getSpecificBook(String ISBN, String collocation) {
 		String sql = "SELECT * FROM Books WHERE ISBN=? and collocation=?";
 		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -693,10 +712,10 @@ public class DBManager {
 		return false;
 	}
 
-	public static int removeBook(String ISBN)/* throws EntityAlreadyReferencedException */{
-		String sqlremove = "DELETE FROM Books WHERE ISBN = ?";
-		String sqlupdate = "UPDATE Books SET removed = 1 WHERE ISBN = ?";
-		String sqlcheck = "SELECT COUNT() FROM BookLoaned WHERE bookISBN = \""+ISBN+"\";";
+	public static int removeBook(String COLL)/* throws EntityAlreadyReferencedException */{
+		String sqlremove = "DELETE FROM Books WHERE collocation = ?";
+		String sqlupdate = "UPDATE Books SET removed = 1 WHERE collocation = ?";
+		String sqlcheck = "SELECT COUNT() FROM BookLoaned WHERE bookColl = \""+COLL+"\";";
 		
 		try (Connection conn = connectDB();
 				Statement stmt = conn.createStatement();
@@ -705,12 +724,12 @@ public class DBManager {
 				PreparedStatement pstUpd = conn.prepareStatement(sqlupdate)) {
 
 			if(rs.next() && rs.getInt(1)>0) {
-				pstUpd.setString(1, ISBN);
+				pstUpd.setString(1, COLL);
 				return pstUpd.executeUpdate();
 			}
 			
 			// set the corresponding param
-			pstDel.setString(1, ISBN);
+			pstDel.setString(1, COLL);
 			// execute the delete statement
 			return pstDel.executeUpdate();
 
@@ -727,7 +746,7 @@ public class DBManager {
 	 * @return boolean
 	 */
 	public static boolean checkBookAlreadyPresent(String collocation) {
-		String sql = "SELECT ISBN FROM Books WHERE Collocation=?";
+		String sql = "SELECT ISBN FROM Books WHERE collocation=?";
 		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
 			pstmt.setString(1, collocation);
@@ -742,8 +761,8 @@ public class DBManager {
 		return false;
 	}
 	
-	public static boolean checkISBNRemoved(String ISBN) {
-		String sql = "SELECT removed FROM Books WHERE ISBN=?";
+	public static boolean checkCollocationRemoved(String ISBN) {
+		String sql = "SELECT removed FROM Books WHERE collocation=?";
 		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
 			pstmt.setString(1, ISBN);
@@ -999,7 +1018,7 @@ public class DBManager {
 	}
 
 	public static boolean checkIfBookLoaned(String ISBN, String collocation) {
-		String sql = "select BookLoaned.bookISBN as 'ISBN', Books.collocation as 'collocation' from Loans inner join ( BookLoaned inner join Books on BookLoaned.bookISBN = Books.ISBN) on Loans.ID = BookLoaned.loanID where Loans.returned=0 and (BookLoaned.bookISBN=? or Books.collocation=?)";
+		String sql = "select BookLoaned.bookColl as 'ISBN', Books.collocation as 'collocation' from Loans inner join ( BookLoaned inner join Books on BookLoaned.bookColl = Books.collocation) on Loans.ID = BookLoaned.loanID where Loans.returned=0 and (BookLoaned.bookColl=? or Books.collocation=?)";
 		
 		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql);) {
 
@@ -1029,13 +1048,13 @@ public class DBManager {
 		/*
 		 "CREATE TABLE `BookLoaned` (
 		  `loanID` INTEGER NOT NULL,
-		   `bookISBN` TEXT NOT NULL,
+		   `bookColl` TEXT NOT NULL,
 		    FOREIGN KEY(`loanID`) REFERENCES `Loans`(`ID`),
-		     FOREIGN KEY(`bookISBN`) REFERENCES `Books`(`ISBN`) )";
+		     FOREIGN KEY(`bookColl`) REFERENCES `Books`(`ISBN`) )";
 		*/
 		String sql = "INSERT INTO Loans(client,dataS,dataE,dataR,returned) VALUES(?,?,?,?,?)";
 		//String sqlID = "SELECT last_insert_rowid()";
-		String sqlBook = "INSERT INTO BookLoaned(loanID,bookISBN) VALUES(?,?)";
+		String sqlBook = "INSERT INTO BookLoaned(loanID,bookColl) VALUES(?,?)";
 		int returnedID = -1;
 		 
         try (Connection conn = connectDB();
@@ -1083,7 +1102,7 @@ public class DBManager {
 	public static List<Book> getBookLoanedAsList(int loanID) {
 		ArrayList<Book> AL = new ArrayList<>();
 		
-		String sql = "select Books.ISBN from BookLoaned inner join Books on BookLoaned.bookISBN = Books.ISBN and BookLoaned.loanID = ?;";
+		String sql = "select Books.collocation from BookLoaned inner join Books on BookLoaned.bookColl = Books.collocation and BookLoaned.loanID = ?;";
 
 		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql);) {
 			
@@ -1092,7 +1111,7 @@ public class DBManager {
 			ResultSet rs = pstmt.executeQuery();
 			
 			while(rs.next()) {
-				AL.add(	DBManager.getBookByISBN(rs.getString(1)) );
+				AL.add(	DBManager.getBookByCollocation(rs.getString(1)) );
 			}
 			
 		} catch (SQLException e) {
@@ -1173,7 +1192,7 @@ public class DBManager {
 				"	Loans.ID = (" + 
 				"		select BookLoaned.loanID as LOANID" + 
 				"		from Books inner join BookLoaned" + 
-				"			on Books.ISBN == BookLoaned.bookISBN" + 
+				"			on Books.collocation == BookLoaned.bookColl" + 
 				"		where Books.ISBN like ? and Books.title like ? and Books.collocation like ?" + 
 				"	) and" + 
 				"	( Clients.cognome || ' ' || Clients.nome ) like ? and" + 

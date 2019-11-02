@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.util.Vector;
 
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -26,8 +27,11 @@ import it.islandofcode.jbiblio.artefact.Client;
 import it.islandofcode.jbiblio.artefact.Loan;
 import it.islandofcode.jbiblio.db.DBDate;
 import it.islandofcode.jbiblio.db.DBManager;
+import it.islandofcode.jbiblio.stats.LoadingUI;
+
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
 
 public class ResolveLoan extends JFrame {
 
@@ -55,6 +59,7 @@ public class ResolveLoan extends JFrame {
 	private JLabel TXT_startLoan;
 	private JLabel lblFinePrestito;
 	private JLabel TXT_endLoan;
+	private JLabel TXT_returnedLoan;
 	private JScrollPane SP_loans;
 	
 	private JTable listOfBook;
@@ -85,7 +90,7 @@ public class ResolveLoan extends JFrame {
 		setTitle("Risolvi prestito");
 		setAlwaysOnTop(true);
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		setBounds(100, 100, 450, 300);
+		setBounds(100, 100, 450, 333);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -160,7 +165,7 @@ public class ResolveLoan extends JFrame {
 			}
 		});
 		B_resolve.setFont(new Font("Dialog", Font.BOLD, 14));
-		B_resolve.setBounds(10, 233, 98, 26);
+		B_resolve.setBounds(10, 267, 98, 26);
 		contentPane.add(B_resolve);
 		
 		B_cancel = new JButton("Cancella");
@@ -169,11 +174,11 @@ public class ResolveLoan extends JFrame {
 				dispose();
 			}
 		});
-		B_cancel.setBounds(336, 233, 98, 26);
+		B_cancel.setBounds(334, 268, 98, 26);
 		contentPane.add(B_cancel);
 		
 		separator_1 = new JSeparator();
-		separator_1.setBounds(10, 219, 422, 2);
+		separator_1.setBounds(10, 253, 422, 2);
 		contentPane.add(separator_1);
 		
 		B_clean = new JButton("Pulisci");
@@ -186,7 +191,7 @@ public class ResolveLoan extends JFrame {
 		contentPane.add(B_clean);
 		
 		SP_loans = new JScrollPane();
-		SP_loans.setBounds(10, 104, 422, 103);
+		SP_loans.setBounds(10, 138, 422, 103);
 		contentPane.add(SP_loans);
 		
 		JLabel lblNominativoCliente = new JLabel("Cliente:");
@@ -232,6 +237,38 @@ public class ResolveLoan extends JFrame {
 		TXT_endLoan.setBounds(305, 72, 127, 20);
 		contentPane.add(TXT_endLoan);
 		
+		JLabel lblPrestitoRestituito = new JLabel("Prestito restituito:");
+		lblPrestitoRestituito.setFont(new Font("Dialog", Font.ITALIC, 12));
+		lblPrestitoRestituito.setBounds(10, 110, 117, 16);
+		contentPane.add(lblPrestitoRestituito);
+		
+		TXT_returnedLoan = new JLabel();
+		TXT_returnedLoan.setBounds(124, 106, 96, 20);
+		contentPane.add(TXT_returnedLoan);
+		
+		JButton B_printReceipt = new JButton("Stampa PDF");
+		B_printReceipt.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String basePath = System.getProperty("user.home") + "/Desktop";
+				JFileChooser chooser = new JFileChooser();
+				chooser.setCurrentDirectory(new File(basePath));
+				chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				chooser.setDialogTitle("Salva ricevuta prestito");				
+				int res = chooser.showSaveDialog(getContentPane());
+				
+				if(res!=JFileChooser.APPROVE_OPTION) {
+					return;
+				}
+
+				File destination = new File(chooser.getSelectedFile().getAbsolutePath());
+								
+				new LoadingUI(null, LoadingUI.WORKTYPE.LOAN, destination, Integer.parseInt(TXT_idLoan.getText().trim()) );
+			}
+		});
+		B_printReceipt.setFont(new Font("Dialog", Font.PLAIN, 12));
+		B_printReceipt.setBounds(164, 269, 113, 24);
+		contentPane.add(B_printReceipt);
+		
 		if(parent!=null)
 			this.parent.signalFrameOpened(getTitle());
 		
@@ -239,21 +276,26 @@ public class ResolveLoan extends JFrame {
 		if(IDLoan>0) {
 			Loan L = DBManager.getLoan(IDLoan);
 			
-			if(L==null || L.getReturned()!=0) {
-				JOptionPane.showMessageDialog(contentPane, "Questo prestito non esiste o è già stato risolto!", "Attenzione", JOptionPane.WARNING_MESSAGE);
+			if(L==null) {
+				JOptionPane.showMessageDialog(contentPane, "Questo prestito non esiste", "Attenzione", JOptionPane.WARNING_MESSAGE);
 				if(parent!=null)
 					parent.signalFrameClosed(getTitle());
 				this.dispose();
 				return;
 			}
+			
 			TXT_idLoan.setText(""+L.getID());
 			populateForm(L);
+			
+			if(viewOnly || L.getReturned()!=0) {
+				setViewOnlyMode();
+			} else {
+				contentPane.remove(B_printReceipt);
+			}
+		} else {
+			contentPane.remove(B_printReceipt);
 		}
-		
-		if(viewOnly) {
-			setViewOnlyMode();
-		}
-		
+
 		this.setVisible(true);
 	}
 	
@@ -298,6 +340,7 @@ public class ResolveLoan extends JFrame {
 		TXT_startLoan.setText("");
 		TXT_endLoan.setText("");
 		TXT_idLoan.setText("");
+		TXT_returnedLoan.setText("");
 		SP_loans.setViewportView(null);
 		listOfBook = null;
 		theLoan = null;
@@ -337,7 +380,10 @@ public class ResolveLoan extends JFrame {
 		TXT_class.setText(C.getClasse()+C.getSezione());
 		
 		TXT_startLoan.setText((new DBDate(L.getDateStart())).getHumanDate());
-						
+		if(!L.getDateReturned().isEmpty())
+			TXT_returnedLoan.setText( new DBDate(L.getDateReturned()).getHumanDate() );
+		else
+			TXT_returnedLoan.setText("<html><i>in corso");
 		listOfBook = new JTable(generateTableModel(L));
 		
 		listOfBook.setEnabled(false);
