@@ -599,7 +599,7 @@ public class DBManager {
 		} catch (SQLException e) {
 			Logger.error(e);
 		}
-		return null;
+		return L;
 	}
 	
 	public static Book getBookByCollocation(String collocation) {
