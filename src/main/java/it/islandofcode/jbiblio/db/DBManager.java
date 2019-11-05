@@ -28,7 +28,7 @@ public class DBManager {
 
 	public static final String DBFILEPATH = "db/";
 	public static final String DBFILENAME = "jbiblio.db";
-	public static final int USER_VERSION = 10;
+	public static final int USER_VERSION = 20;
 	
 	public static void createDB() {
 		String URL = "jdbc:sqlite:"+DBFILEPATH+DBFILENAME;
@@ -688,8 +688,8 @@ public class DBManager {
 		return false;
 	}
 	
-	public static boolean updateBook(String ISBN, Book B) {
-		String sql = "UPDATE Books SET ISBN = ? ,title = ? ,author = ? ,publisher = ? ,publishdate = ? ,thumbnail = ? ,collocation = ? WHERE ISBN = ?";
+	public static boolean updateBook(String collocation, Book B) {
+		String sql = "UPDATE Books SET ISBN = ? ,title = ? ,author = ? ,publisher = ? ,publishdate = ? ,thumbnail = ? ,collocation = ? WHERE collocation = ?";
 
 		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -701,7 +701,7 @@ public class DBManager {
             pstmt.setString(6, B.getThumbnail());
             pstmt.setString(7, B.getCollocation());
           //Non c'è bisogno di inserire removed perchè questo viene aggiornato solo dalla funzione di cancellazione libro
-            pstmt.setString(8, ISBN);
+            pstmt.setString(8, collocation);
 			// update
 			pstmt.executeUpdate();
 			

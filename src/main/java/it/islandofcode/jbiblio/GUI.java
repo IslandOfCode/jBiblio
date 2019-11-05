@@ -287,6 +287,15 @@ public class GUI implements IRemoteUpdate{
 		});
 		M_inventory.add(MI_removeBook);
 		
+		JMenuItem mntmListaLibriDanneggiati = new JMenuItem("Lista libri danneggiati");
+		mntmListaLibriDanneggiati.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				new SearchRemoved();
+			}
+		});
+		mntmListaLibriDanneggiati.setIcon(new ImageIcon(GUI.class.getResource("/icon/cerca.png")));
+		M_inventory.add(mntmListaLibriDanneggiati);
+		
 		JLabel lblClienti = new JLabel("        Clienti   ");
 		lblClienti.setHorizontalAlignment(SwingConstants.CENTER);
 		lblClienti.setFont(new Font("Tahoma", Font.BOLD | Font.ITALIC, 12));

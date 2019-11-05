@@ -183,9 +183,9 @@ public class EditBook extends JFrame implements IRemoteUpdate{
 					Book bookUpdate = retriveDataFromForm();
 					
 					if(!book.equals(bookUpdate)) {
-						DBManager.updateBook(book.getISBN(), bookUpdate);
+						DBManager.updateBook(book.getCollocation(), bookUpdate);
 						JOptionPane.showMessageDialog(contentPane, "Libro aggiornato", "Aggiornamento", JOptionPane.INFORMATION_MESSAGE);
-						Logger.info("Libro ["+book.getISBN()+"], aggiornato con ISBN:"+book.getISBN());
+						Logger.info("Libro ["+book.getCollocation()+"], aggiornato con Collocazione:"+book.getCollocation());
 					} //else do nothing
 					
 					Logger.warn("nessun aggiornamento effetturato ["+book.hashCode()+"]=["+bookUpdate.hashCode()+"]");
