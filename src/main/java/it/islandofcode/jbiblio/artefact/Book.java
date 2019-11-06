@@ -20,9 +20,10 @@ public class Book {
 	private String thumbnail;
 	private String collocation;
 	private int removed;
+	private int damaged;
 	
 	
-	public Book(String iSBN, String title, String author, String publisher, String publishedData, String thumbnail, String collocation, int removed) {
+	public Book(String iSBN, String title, String author, String publisher, String publishedData, String thumbnail, String collocation, int removed, int damaged) {
 		isbn = iSBN;
 		this.title = title;
 		this.author = author;
@@ -31,6 +32,7 @@ public class Book {
 		this.thumbnail = thumbnail;
 		this.collocation = collocation;
 		this.removed = removed;
+		this.damaged = damaged;
 	}
 
 	/**
@@ -118,6 +120,21 @@ public class Book {
 	
 	public boolean isPresent() {
 		return this.removed==0;
+	}
+	
+	public int getDamaged() {
+		return removed;
+	}
+
+	public void setDamaged(int damaged) {
+		if(damaged>=1)
+			this.damaged = 1;
+		else
+			this.damaged = 0;
+	}
+	
+	public boolean isdamaged() {
+		return this.damaged==1;
 	}
 
 	public static String URLimage2Base64(String url) {

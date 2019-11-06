@@ -176,7 +176,9 @@ public class SearchBook extends JFrame implements IRemoteUpdate{
 							return;
 					}
 					
-					int ret = DBManager.removeBook(COLL);
+					new RemoveBook(DBManager.getSpecificBook(ISBN, COLL));					
+					
+					/*int ret = DBManager.removeBook(COLL);
 					
 					if(ret<0) {
 						JOptionPane.showMessageDialog(contentPane, "Non è stato possibile rimuovere il libro selezionato.", "Errore DataBase!", JOptionPane.ERROR_MESSAGE);
@@ -184,6 +186,7 @@ public class SearchBook extends JFrame implements IRemoteUpdate{
 					}
 					
 					JOptionPane.showMessageDialog(contentPane, "Il libro scelto è stato rimosso!", "Operazione completata", JOptionPane.INFORMATION_MESSAGE);
+					*/
 				}
 			}
 		});

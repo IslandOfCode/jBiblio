@@ -20,6 +20,7 @@ import javax.swing.table.DefaultTableModel;
 
 import org.tinylog.Logger;
 
+import it.islandofcode.jbiblio.artefact.Blame;
 import it.islandofcode.jbiblio.artefact.Book;
 import it.islandofcode.jbiblio.artefact.Client;
 import it.islandofcode.jbiblio.artefact.Loan;
@@ -28,7 +29,7 @@ public class DBManager {
 
 	public static final String DBFILEPATH = "db/";
 	public static final String DBFILENAME = "jbiblio.db";
-	public static final int USER_VERSION = 10;
+	public static final int USER_VERSION = 20;
 	
 	public static void createDB() {
 		String URL = "jdbc:sqlite:"+DBFILEPATH+DBFILENAME;
@@ -47,10 +48,11 @@ public class DBManager {
 	public static final void initDB() {		
 		String URL = "jdbc:sqlite:"+DBFILEPATH+DBFILENAME;
 
-		String BOOKS = "CREATE TABLE \"Books\" ( `ISBN` TEXT NOT NULL, `title` TEXT, `author` TEXT, `publisher` TEXT, `publishdate` TEXT, `thumbnail` TEXT, `collocation` TEXT NOT NULL UNIQUE, `removed` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`collocation`) )";
+		String BOOKS = "CREATE TABLE \"Books\" ( `ISBN` TEXT NOT NULL, `title` TEXT, `author` TEXT, `publisher` TEXT, `publishdate` TEXT, `thumbnail` TEXT, `collocation` TEXT NOT NULL UNIQUE, `removed` INTEGER NOT NULL DEFAULT 0, `damaged` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`collocation`) )";
 		String CLIENTS = "CREATE TABLE `Clients` ( `ID` INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, `nome` TEXT, `cognome` TEXT, `classe` INTEGER, `sezione` TEXT, `removed` INTEGER NOT NULL DEFAULT 0 );";
 		String LOANS = "CREATE TABLE `Loans` ( `ID` INTEGER PRIMARY KEY AUTOINCREMENT, `client` INTEGER, `dataS` TEXT, `dataE` TEXT, `dataR` TEXT, `returned` INTEGER NOT NULL DEFAULT 0, FOREIGN KEY(`client`) REFERENCES `Clients`(`ID`) )";
 		String BOOKLOANED = "CREATE TABLE `BookLoaned` (`loanID` INTEGER NOT NULL,`bookColl` TEXT NOT NULL,FOREIGN KEY(`loanID`) REFERENCES `Loans`(`ID`),FOREIGN KEY(`bookColl`) REFERENCES `Books`(`collocation`));";
+		String BOOKREMOVED = "CREATE TABLE `BookRemoved` ( `bookColl` TEXT, `oldColl` TEXT, `reason` TEXT NOT NULL DEFAULT 'RITIRATO', `blame` INTEGER DEFAULT -1, `note` TEXT, `date` TEXT NOT NULL )";
         
 		String PRAGMA_USER_VERSION = "PRAGMA user_version=";
 		
@@ -63,6 +65,8 @@ public class DBManager {
             stmt.execute(LOANS);
             //conn.createStatement();
             stmt.execute(BOOKLOANED);
+            
+            stmt.execute(BOOKREMOVED);
             
             stmt.execute(PRAGMA_USER_VERSION+USER_VERSION);
             
@@ -494,6 +498,85 @@ public class DBManager {
 		return null;
 	}
 	
+	public static DefaultTableModel searchRemovedAsTableModel(String ISBN, String title, String name, boolean getall) {
+		boolean I = false,
+				T = false,
+				N = false;
+		String sql = "select BookRemoved.bookColl as 'Ref.', BookRemoved.oldColl as 'Coll.', Books.ISBN as 'ISBN', Books.title as 'Titolo', (Clients.nome||' '||Clients.cognome) as 'Colpevole', BookRemoved.reason as 'Ragione', BookRemoved.date as 'Data rimozione' from BookRemoved inner join Books on BookRemoved.bookColl=Books.collocation inner join Clients on BookRemoved.blame=Clients.ID";
+
+		if (!getall) {
+			sql += " where";
+			
+			if (ISBN != null && !ISBN.isEmpty()) {
+				sql += " Books.ISBN LIKE ?";
+				I = true;
+			}
+
+			if (title != null && !title.isEmpty()) {
+				if (I)
+					sql += " AND";
+				sql += " Books.title LIKE ?";
+				T = true;
+			}
+
+			if (name != null && !name.isEmpty()) {
+				if (I || T)
+					sql += " AND";
+				sql += " (Clients.nome||' '||Clients.cognome) LIKE ?";
+				N = true;
+			}
+		}
+
+		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+			int i=1;
+			if(I) {
+				pstmt.setString(i, "%"+ISBN+"%");
+				i++;
+			}
+			if(T) {
+				pstmt.setString(i, "%"+title+"%");
+				i++;
+			}
+			if(N) {
+				pstmt.setString(i, "%"+name+"%");
+			}
+			
+			ResultSet rs = pstmt.executeQuery();
+
+			
+			ResultSetMetaData metaData = rs.getMetaData();
+			
+		    Vector<String> columnNames = new Vector<String>();
+		    int columnCount = metaData.getColumnCount();
+		    for (int column = 1; column <= columnCount; column++) {
+		        columnNames.add(metaData.getColumnName(column));
+		    }
+			
+		    Vector<Vector<Object>> data = new Vector<Vector<Object>>();
+			while (rs.next()) {
+				Vector<Object> vector = new Vector<Object>();
+		        for (int columnIndex = 1; columnIndex <= columnCount; columnIndex++) {
+		        	vector.add(rs.getObject(columnIndex));
+		        }
+		        data.add(vector);
+			}
+			
+			DefaultTableModel DTM = new ReadOnlyTableModel();
+			
+			if(data.size()>0) {
+				DTM.setColumnIdentifiers(columnNames);
+				DTM.setDataVector(data, columnNames);
+				return DTM;
+			}
+			
+		} catch (SQLException e) {
+			Logger.error(e);
+		}
+
+		return null;
+	}
+	
 	/**
 	 * Il parametro permette di scegliere se ritornare tutti i libri (TRUE),
 	 * oppure ignorare quelli che sono stati marcati come scartati
@@ -525,7 +608,8 @@ public class DBManager {
 							rs.getString("publishdate"),
 							rs.getString("thumbnail"),
 							rs.getString("collocation"),
-							rs.getInt("removed")
+							rs.getInt("removed"),
+							rs.getInt("damaged")
 						)
 					);
 			}
@@ -535,37 +619,6 @@ public class DBManager {
 		}
 		return L;
 	}
-	
-	/*public static Book getBookByISBN(String iSBN) {
-		String sql = "SELECT * FROM Books WHERE ISBN=?";
-		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-			// set the value
-			pstmt.setString(1, iSBN);
-			
-			ResultSet rs = pstmt.executeQuery();
-
-			// loop through the result set
-			if(rs.next()) {
-
-				return new Book(
-						rs.getString("ISBN"),
-						rs.getString("title"),
-						rs.getString("author"),
-						rs.getString("publisher"),
-						rs.getString("publishdate"),
-						rs.getString("thumbnail"),
-						rs.getString("collocation"),
-						rs.getInt("removed")
-						);
-
-			}
-			
-		} catch (SQLException e) {
-			Logger.error(e);
-		}
-		return null;
-	}*/
 	
 	public static List<Book> getBookListByISBN(String iSBN) {
 		ArrayList<Book> L = new ArrayList<>();
@@ -588,7 +641,8 @@ public class DBManager {
 						rs.getString("publishdate"),
 						rs.getString("thumbnail"),
 						rs.getString("collocation"),
-						rs.getInt("removed")
+						rs.getInt("removed"),
+						rs.getInt("damaged")
 						)
 					);
 
@@ -622,7 +676,8 @@ public class DBManager {
 						rs.getString("publishdate"),
 						rs.getString("thumbnail"),
 						rs.getString("collocation"),
-						rs.getInt("removed")
+						rs.getInt("removed"),
+						rs.getInt("damaged")
 						);
 
 			}
@@ -654,7 +709,8 @@ public class DBManager {
 						rs.getString("publishdate"),
 						rs.getString("thumbnail"),
 						rs.getString("collocation"),
-						rs.getInt("removed")
+						rs.getInt("removed"),
+						rs.getInt("damaged")
 						);
 
 			}
@@ -688,8 +744,8 @@ public class DBManager {
 		return false;
 	}
 	
-	public static boolean updateBook(String ISBN, Book B) {
-		String sql = "UPDATE Books SET ISBN = ? ,title = ? ,author = ? ,publisher = ? ,publishdate = ? ,thumbnail = ? ,collocation = ? WHERE ISBN = ?";
+	public static boolean updateBook(String collocation, Book B) {
+		String sql = "UPDATE Books SET ISBN = ? ,title = ? ,author = ? ,publisher = ? ,publishdate = ? ,thumbnail = ? ,collocation = ? WHERE collocation = ?";
 
 		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -701,7 +757,7 @@ public class DBManager {
             pstmt.setString(6, B.getThumbnail());
             pstmt.setString(7, B.getCollocation());
           //Non c'è bisogno di inserire removed perchè questo viene aggiornato solo dalla funzione di cancellazione libro
-            pstmt.setString(8, ISBN);
+            pstmt.setString(8, collocation);
 			// update
 			pstmt.executeUpdate();
 			
@@ -712,31 +768,85 @@ public class DBManager {
 		return false;
 	}
 
-	public static int removeBook(String COLL)/* throws EntityAlreadyReferencedException */{
+	public static int removeBook(String COLL) {
 		String sqlremove = "DELETE FROM Books WHERE collocation = ?";
-		String sqlupdate = "UPDATE Books SET removed = 1 WHERE collocation = ?";
+		String sqlupdate1 = "UPDATE Books SET removed = 1, collocation = '"+Blame.PREFIX+"'||? WHERE collocation = ?";
+		String sqlupdate2 = "UPDATE BookLoaned SET bookColl = '"+Blame.PREFIX+"'||? WHERE bookColl = ?";
 		String sqlcheck = "SELECT COUNT() FROM BookLoaned WHERE bookColl = \""+COLL+"\";";
 		
 		try (Connection conn = connectDB();
 				Statement stmt = conn.createStatement();
 				ResultSet rs = stmt.executeQuery(sqlcheck);
 				PreparedStatement pstDel = conn.prepareStatement(sqlremove);
-				PreparedStatement pstUpd = conn.prepareStatement(sqlupdate)) {
+				PreparedStatement pstUpd1 = conn.prepareStatement(sqlupdate1);
+				PreparedStatement pstUpd2 = conn.prepareStatement(sqlupdate2)) {
 
+			//se esiste almeno un prestito con questo libro, marcalo rimosso ovunque
 			if(rs.next() && rs.getInt(1)>0) {
-				pstUpd.setString(1, COLL);
-				return pstUpd.executeUpdate();
+				pstUpd1.setString(1, COLL);
+				pstUpd1.setString(2, COLL);
+				pstUpd2.setString(1, COLL);
+				pstUpd2.setString(2, COLL);
+				//ritorna il numero totale di righe aggiornate
+				//MINIMO sarà 2 (il libro e un prestito)
+				int r = pstUpd1.executeUpdate();
+				return r + (pstUpd2.executeUpdate());
 			}
-			
-			// set the corresponding param
+			//altrimenti rimuovilo direttamente
 			pstDel.setString(1, COLL);
-			// execute the delete statement
+			//questo ritornerà 1 (se successo) perchè c'è un solo libro x collocazione
 			return pstDel.executeUpdate();
 
 		} catch (SQLException e) {
 			Logger.error(e);
 		}
 		return -1;
+	}
+	
+	public static boolean addRemovedBookReason(Blame B) {
+		String sql = "INSERT INTO BookRemoved(bookColl, oldColl, reason, blame, note, date) VALUES(?,?,?,?,?,?)";
+		 
+        try (Connection conn = connectDB();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, B.getCollocation());
+            pstmt.setString(2, B.getOriginalColl());
+            pstmt.setString(3, B.getReason().name());
+            pstmt.setInt(4, B.getClient());
+            pstmt.setString(5, B.getNote());
+            pstmt.setString(6, B.getDate().getSQLiteDate());
+            pstmt.executeUpdate();
+            
+            return pstmt.getUpdateCount()>0;
+            
+        } catch (SQLException e) {
+            Logger.error(e);
+        }
+		return false;
+	}
+	
+	public static Blame getRemovedBookReason(String COLL) {
+		String sql = "SELECT * FROM BookRemoved WHERE bookColl=?";
+		try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+			pstmt.setString(1, COLL);
+			
+			ResultSet rs = pstmt.executeQuery();
+
+			if(rs.next()) {
+				return new Blame(
+						rs.getString("bookColl"),
+						rs.getString("oldColl"),
+						Blame.DAMAGED_STATUS_INDEX.valueOf(rs.getString("reason")),
+						rs.getInt("blame"),
+						rs.getString("note"),
+						rs.getString("date")
+						);
+			}
+			
+		} catch (SQLException e) {
+			Logger.error(e);
+		}
+		return null;
 	}
 	
 	/**
