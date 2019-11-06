@@ -4,12 +4,13 @@ import it.islandofcode.jbiblio.db.DBDate;
 
 public class Blame {
 	
-	public static final String[] DAMAGED_STATUS = new String[] {"Ritirato", "Danneggiato", "Perso", "Trasferito"};
+	public static final String[] DAMAGED_STATUS = new String[] {"Ritirato", "Danneggiato", "Perso", "Trasferito", "Inserimento errato"};
 	public enum DAMAGED_STATUS_INDEX {
 		RITIRATO,
 		DANNEGGIATO,
 		PERSO,
-		TRASFERITO
+		TRASFERITO,
+		INSERIMENTO_ERRATO
 	}
 	public static final int NOTE_LENGHT = 100;
 	public static final String PREFIX = "R#_";

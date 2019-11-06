@@ -34,6 +34,8 @@ import it.islandofcode.jbiblio.artefact.Book;
 import it.islandofcode.jbiblio.artefact.Client;
 import it.islandofcode.jbiblio.db.DBDate;
 import it.islandofcode.jbiblio.db.DBManager;
+import java.awt.event.ItemListener;
+import java.awt.event.ItemEvent;
 
 public class RemoveBook extends JFrame {
 
@@ -47,6 +49,7 @@ public class RemoveBook extends JFrame {
 	private JComboBox<String> CB_reason;
 	private JTextPane TXT_note;
 	private JLabel TXT_charLen;
+	private JButton B_checkClient;
 	
 	private Book book;
 	private Client client;
@@ -106,6 +109,28 @@ public class RemoveBook extends JFrame {
 		contentPane.add(lblRagione);
 		
 		CB_reason = new JComboBox<String>();
+		CB_reason.addItemListener(new ItemListener() {
+			public void itemStateChanged(ItemEvent e) {
+				if (e.getStateChange() == ItemEvent.SELECTED) {
+					String item = (String) e.getItem();
+					if (item.equals(Blame.DAMAGED_STATUS[Blame.DAMAGED_STATUS_INDEX.INSERIMENTO_ERRATO.ordinal()])) {
+						TXT_IDclient.setEnabled(false);
+						TXT_note.setEnabled(false);
+						B_checkClient.setEnabled(false);
+						
+					} else if (item.equals(Blame.DAMAGED_STATUS[Blame.DAMAGED_STATUS_INDEX.RITIRATO.ordinal()])
+							|| item.equals(Blame.DAMAGED_STATUS[Blame.DAMAGED_STATUS_INDEX.TRASFERITO.ordinal()])) {
+						TXT_IDclient.setEnabled(false);
+						B_checkClient.setEnabled(false);
+						TXT_note.setEnabled(true);
+					} else {
+						TXT_IDclient.setEnabled(true);
+						TXT_note.setEnabled(true);
+						B_checkClient.setEnabled(true);
+					}
+				}
+			}
+		});
 		CB_reason.setModel(new DefaultComboBoxModel<String>(Blame.DAMAGED_STATUS));
 		CB_reason.setSelectedIndex(0);
 		CB_reason.setBounds(96, 107, 131, 25);
@@ -116,13 +141,6 @@ public class RemoveBook extends JFrame {
 		contentPane.add(lblCliente);
 		
 		TXT_IDclient = new JTextField();
-		TXT_IDclient.addKeyListener(new KeyAdapter() {
-			@Override
-			public void keyTyped(KeyEvent e) {
-				//if(client!=null && client.getID()!=Integer.parseInt(TXT_IDclient.getText().trim()))
-				B_confirm.setEnabled(false);
-			}
-		});
 		TXT_IDclient.setHorizontalAlignment(SwingConstants.CENTER);
 		TXT_IDclient.setFont(new Font("Dialog", Font.BOLD, 14));
 		TXT_IDclient.setBounds(96, 152, 66, 24);
@@ -158,12 +176,21 @@ public class RemoveBook extends JFrame {
 		TXT_note.setFont(new Font("Dialog", Font.ITALIC, 12));
 		scrollPane.setViewportView(TXT_note);
 		
-		JButton B_checkClient = new JButton("Check");
+		B_checkClient = new JButton("Check");
 		B_checkClient.setIcon(new ImageIcon(RemoveBook.class.getResource("/icon/cerca.png")));
 		B_checkClient.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				/*
+				String isel = ((String)CB_reason.getSelectedItem());
+				if(isel.equals(Blame.DAMAGED_STATUS[DAMAGED_STATUS_INDEX.RITIRATO.ordinal()])
+						|| isel.equals(Blame.DAMAGED_STATUS[DAMAGED_STATUS_INDEX.TRASFERITO.ordinal()])
+						|| isel.equals(Blame.DAMAGED_STATUS[DAMAGED_STATUS_INDEX.INSERIMENTO_ERRATO.ordinal()])
+					) {
+					JOptionPane.showMessageDialog(contentPane, "Per questa ragione, l'id cliente è superfluo", "ID client", JOptionPane.INFORMATION_MESSAGE);
+				} else {
+					if(!checkClientByID()) return;
+				}*/
 				if(!checkClientByID()) return;
-				B_confirm.setEnabled(true);
 			}
 		});
 		B_checkClient.setBounds(174, 151, 98, 26);
@@ -176,14 +203,32 @@ public class RemoveBook extends JFrame {
 		B_confirm = new JButton("Conferma");
 		B_confirm.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if(!checkClientByID()) return;
+				int client = -1;
+				String isel = ((String)CB_reason.getSelectedItem());
+				//a differenza della Check , qui uso A xor(^) B
+				//Lo xor è vero solo se A e B sono diversi (uno vero l'altro falso)
+				//che è proprio il nostro caso.
+				if (!(isel.equals(Blame.DAMAGED_STATUS[DAMAGED_STATUS_INDEX.RITIRATO.ordinal()])
+						^ isel.equals(Blame.DAMAGED_STATUS[DAMAGED_STATUS_INDEX.TRASFERITO.ordinal()])
+						^ isel.equals(Blame.DAMAGED_STATUS[DAMAGED_STATUS_INDEX.INSERIMENTO_ERRATO.ordinal()])
+						)) {
+					if (!checkClientByID())
+						return;
+					else
+						client = Integer.parseInt(TXT_IDclient.getText().trim());
+				}
 				
 				int res = DBManager.removeBook(book.getCollocation());
+				
+				if(isel.equals(Blame.DAMAGED_STATUS[DAMAGED_STATUS_INDEX.INSERIMENTO_ERRATO.ordinal()])) {
+					//non devo fare altro
+					return;
+				}
 				
 				Blame B = new Blame(
 						book.getCollocation(),
 						DAMAGED_STATUS_INDEX.valueOf(((String)CB_reason.getSelectedItem()).toUpperCase()),
-						Integer.parseInt(TXT_IDclient.getText().trim()),
+						client,
 						TXT_note.getText().trim(),
 						(new DBDate()).getSQLiteDate()
 						);
@@ -200,7 +245,6 @@ public class RemoveBook extends JFrame {
 				dispose();
 			}
 		});
-		B_confirm.setEnabled(false);
 		B_confirm.setBounds(12, 358, 98, 26);
 		contentPane.add(B_confirm);
 		
