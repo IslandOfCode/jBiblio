@@ -216,48 +216,41 @@ public class GUI implements IRemoteUpdate{
 		M_action.add(separator);
 		M_action.add(MI_close);
 		
-		JMenu M_inventory = new JMenu("Inventario");
-		menuBar.add(M_inventory);
-		
-		JLabel lblPrestiti = new JLabel("        Prestiti   ");
-		lblPrestiti.setFont(new Font("Tahoma", Font.BOLD | Font.ITALIC, 12));
-		lblPrestiti.setHorizontalAlignment(SwingConstants.CENTER);
-		M_inventory.add(lblPrestiti);
+		JMenu M_loans = new JMenu("Prestiti");
+		menuBar.add(M_loans);
 		
 		JMenuItem MI_newLoan = new JMenuItem("Nuovo prestito");
+		M_loans.add(MI_newLoan);
 		MI_newLoan.setIcon(new ImageIcon(GUI.class.getResource("/icon/new_prestito.png")));
 		MI_newLoan.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, KeyEvent.CTRL_DOWN_MASK));
-		MI_newLoan.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				new SearchClient(SearchClient.AFTERSEARCH.LOAN, GUI.this);
-			}
-		});
-		M_inventory.add(MI_newLoan);
 		
 		JMenuItem MI_resolveLoan = new JMenuItem("Risolvi prestito");
+		M_loans.add(MI_resolveLoan);
 		MI_resolveLoan.setIcon(new ImageIcon(GUI.class.getResource("/icon/risolvi.png")));
 		MI_resolveLoan.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK));
-		MI_resolveLoan.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				/*ResolveLoan RL =*/ new ResolveLoan(GUI.this, -1, false);
-				//RL.setVisible(true);
-			}
-		});
-		M_inventory.add(MI_resolveLoan);
 		
 		JMenuItem MI_searchLoan = new JMenuItem("Cerca prestiti");
+		M_loans.add(MI_searchLoan);
 		MI_searchLoan.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				new SearchLoan(GUI.this);
 			}
 		});
 		MI_searchLoan.setIcon(new ImageIcon(GUI.class.getResource("/icon/cerca.png")));
-		M_inventory.add(MI_searchLoan);
+		MI_resolveLoan.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				/*ResolveLoan RL =*/ new ResolveLoan(GUI.this, -1, false);
+				//RL.setVisible(true);
+			}
+		});
+		MI_newLoan.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				new SearchClient(SearchClient.AFTERSEARCH.LOAN, GUI.this);
+			}
+		});
 		
-		JLabel lblInventario = new JLabel("        Inventario   ");
-		lblInventario.setHorizontalAlignment(SwingConstants.CENTER);
-		lblInventario.setFont(new Font("Tahoma", Font.BOLD | Font.ITALIC, 12));
-		M_inventory.add(lblInventario);
+		JMenu M_inventory = new JMenu("Inventario");
+		menuBar.add(M_inventory);
 		
 		JMenuItem MI_newBook = new JMenuItem("Nuovo libro");
 		MI_newBook.setIcon(new ImageIcon(GUI.class.getResource("/icon/add_book.png")));
@@ -278,6 +271,13 @@ public class GUI implements IRemoteUpdate{
 		});
 		M_inventory.add(MI_editBook);
 		
+		JMenuItem MI_searchDamaged = new JMenuItem("Cerca rimossi");
+		MI_searchDamaged.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				new SearchRemoved();
+			}
+		});
+		
 		JMenuItem MI_removeBook = new JMenuItem("Elimina libro");
 		MI_removeBook.setIcon(new ImageIcon(GUI.class.getResource("/icon/elimina.png")));
 		MI_removeBook.addActionListener(new ActionListener() {
@@ -285,49 +285,43 @@ public class GUI implements IRemoteUpdate{
 				new SearchBook(SearchBook.AFTERSEARCH.DELETE, GUI.this);
 			}
 		});
+		
+		JSeparator separator_3 = new JSeparator();
+		M_inventory.add(separator_3);
 		M_inventory.add(MI_removeBook);
+		MI_searchDamaged.setIcon(new ImageIcon(GUI.class.getResource("/icon/cerca.png")));
+		M_inventory.add(MI_searchDamaged);
 		
-		JMenuItem mntmListaLibriDanneggiati = new JMenuItem("Lista libri danneggiati");
-		mntmListaLibriDanneggiati.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				new SearchRemoved();
-			}
-		});
-		mntmListaLibriDanneggiati.setIcon(new ImageIcon(GUI.class.getResource("/icon/cerca.png")));
-		M_inventory.add(mntmListaLibriDanneggiati);
-		
-		JLabel lblClienti = new JLabel("        Clienti   ");
-		lblClienti.setHorizontalAlignment(SwingConstants.CENTER);
-		lblClienti.setFont(new Font("Tahoma", Font.BOLD | Font.ITALIC, 12));
-		M_inventory.add(lblClienti);
+		JMenu M_clients = new JMenu("Clienti");
+		menuBar.add(M_clients);
 		
 		JMenuItem MI_newClient = new JMenuItem("Nuovo cliente");
+		M_clients.add(MI_newClient);
 		MI_newClient.setIcon(new ImageIcon(GUI.class.getResource("/icon/new_client.png")));
 		MI_newClient.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, KeyEvent.CTRL_DOWN_MASK));
-		MI_newClient.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				new EditClient(EditClient.CLIENTMODE.ADD, -1, GUI.this);
-			}
-		});
-		M_inventory.add(MI_newClient);
 		
 		JMenuItem MI_editClient = new JMenuItem("Modifica Cliente");
+		M_clients.add(MI_editClient);
 		MI_editClient.setIcon(new ImageIcon(GUI.class.getResource("/icon/cerca.png")));
-		MI_editClient.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				new SearchClient(SearchClient.AFTERSEARCH.EDIT, GUI.this);
-			}
-		});
-		M_inventory.add(MI_editClient);
 		
 		JMenuItem MI_removeClient = new JMenuItem("Elimina Cliente");
+		M_clients.add(MI_removeClient);
 		MI_removeClient.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				new SearchClient(SearchClient.AFTERSEARCH.DELETE, GUI.this);
 			}
 		});
 		MI_removeClient.setIcon(new ImageIcon(GUI.class.getResource("/icon/elimina.png")));
-		M_inventory.add(MI_removeClient);
+		MI_editClient.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				new SearchClient(SearchClient.AFTERSEARCH.EDIT, GUI.this);
+			}
+		});
+		MI_newClient.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				new EditClient(EditClient.CLIENTMODE.ADD, -1, GUI.this);
+			}
+		});
 		
 		JMenu M_stats = new JMenu("Statistiche");
 		menuBar.add(M_stats);
@@ -399,6 +393,7 @@ public class GUI implements IRemoteUpdate{
 		menuBar.add(separator_1);
 		
 		L_appStatus = new JLabel("<html><p style=\"color:gray;font-style: italic\">App non connessa");
+		L_appStatus.setFont(new Font("Dialog", Font.BOLD, 14));
 		L_appStatus.setHorizontalAlignment(SwingConstants.TRAILING);
 		menuBar.add(L_appStatus);
 		FRAME.getContentPane().setLayout(new BorderLayout(0, 0));

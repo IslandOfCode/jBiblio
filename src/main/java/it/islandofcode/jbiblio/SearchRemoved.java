@@ -17,7 +17,9 @@ import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 
+import it.islandofcode.jbiblio.artefact.Blame;
 import it.islandofcode.jbiblio.db.DBManager;
+import it.islandofcode.jbiblio.db.ReadOnlyTableModel;
 
 public class SearchRemoved extends JFrame {
 
@@ -35,7 +37,7 @@ public class SearchRemoved extends JFrame {
 		setResizable(false);
 		setAlwaysOnTop(true);
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		setBounds(100, 100, 661, 489);
+		setBounds(100, 100, 762, 489);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(new BorderLayout(0, 0));
@@ -75,10 +77,10 @@ public class SearchRemoved extends JFrame {
 				if (TXT_ISBN.getText().isEmpty() && TXT_title.getText().isEmpty()
 						&& TXT_name.getText().isEmpty()) {
 
-					resultTable = new JTable(DBManager.searchBooksAsTableModel(null, null, null, true));
+					resultTable = new JTable(DBManager.searchRemovedAsTableModel(null, null, null, true));
 
 				} else {
-					resultTable = new JTable(DBManager.searchBooksAsTableModel(TXT_ISBN.getText().trim(),
+					resultTable = new JTable(DBManager.searchRemovedAsTableModel(TXT_ISBN.getText().trim(),
 							TXT_title.getText().trim(), TXT_name.getText().trim(), false));
 				}
 
@@ -112,11 +114,20 @@ public class SearchRemoved extends JFrame {
 				} else {
 					DefaultTableModel M = (DefaultTableModel) resultTable.getModel();
 					int row = resultTable.getSelectedRow();
-					//int col = ReadOnlyTableModel.indexOfColumnByName(M, "Coll.");
+					int col = ReadOnlyTableModel.indexOfColumnByName(M, "Ref.");
 
-					//String COLL = (String) M.getValueAt(row, col);
+					String COLL = (String) M.getValueAt(row, col);
 					
-					JOptionPane.showMessageDialog(contentPane, (String)M.getValueAt(row, 0), "TITOLO", JOptionPane.PLAIN_MESSAGE);
+					Blame B = DBManager.getRemovedBookReason(COLL);
+					
+					if(B!=null) {
+						if(B.getNote().isEmpty()) {
+							JOptionPane.showMessageDialog(contentPane, "Non ci sono annotazioni per questo oggetto.", "Attenzione", JOptionPane.WARNING_MESSAGE);
+						} else {
+							JOptionPane.showMessageDialog(contentPane, B.getNote(), "Nota", JOptionPane.PLAIN_MESSAGE);
+						}
+					}
+
 				}
 			}
 		});
