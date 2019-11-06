@@ -98,7 +98,7 @@ public class RemoveBook extends JFrame {
 		
 		JLabel TXT_newColl = new JLabel("R#_99Z");
 		TXT_newColl.setToolTipText("<html>La collocazione viene modificata aggiungendo <code>R#_</code><br/>\r\nall'inizio della stessa, in questo modo il vecchio codice collocazione può<br/>\r\nessere riutilizzato per un nuovo libro.<br/>\r\nQuesto permette anche una più facile gestione del database, dato che<br/>\r\npermette una più facile distinzione tra libri rimossi e libri presenti.");
-		TXT_newColl.setFont(new Font("Dialog", Font.BOLD | Font.ITALIC, 14));
+		TXT_newColl.setFont(new Font("Dialog", Font.BOLD | Font.ITALIC, 12));
 		TXT_newColl.setBounds(116, 66, 131, 16);
 		contentPane.add(TXT_newColl);
 		

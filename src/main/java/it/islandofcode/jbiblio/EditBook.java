@@ -288,8 +288,10 @@ public class EditBook extends JFrame implements IRemoteUpdate{
 		}
 		
 		int removed = 0;
-		if(MODE==BOOKMODE.EDIT) {
-			removed = 1;
+		int damaged = 0;
+		if(MODE==BOOKMODE.EDIT && book!=null) {
+			removed = book.getRemoved();
+			damaged = book.getDamaged();
 		}
 		
 		return new Book(
@@ -300,7 +302,8 @@ public class EditBook extends JFrame implements IRemoteUpdate{
 				this.TXT_bookDate.getText().trim(),
 				thumb,
 				this.TXT_collocation.getText().trim().toUpperCase(),
-				removed
+				removed,
+				damaged
 				);
 	}
 	

@@ -47,10 +47,11 @@ public class DBManager {
 	public static final void initDB() {		
 		String URL = "jdbc:sqlite:"+DBFILEPATH+DBFILENAME;
 
-		String BOOKS = "CREATE TABLE \"Books\" ( `ISBN` TEXT NOT NULL, `title` TEXT, `author` TEXT, `publisher` TEXT, `publishdate` TEXT, `thumbnail` TEXT, `collocation` TEXT NOT NULL UNIQUE, `removed` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`collocation`) )";
+		String BOOKS = "CREATE TABLE \"Books\" ( `ISBN` TEXT NOT NULL, `title` TEXT, `author` TEXT, `publisher` TEXT, `publishdate` TEXT, `thumbnail` TEXT, `collocation` TEXT NOT NULL UNIQUE, `removed` INTEGER NOT NULL DEFAULT 0, `damaged` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`collocation`) )";
 		String CLIENTS = "CREATE TABLE `Clients` ( `ID` INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, `nome` TEXT, `cognome` TEXT, `classe` INTEGER, `sezione` TEXT, `removed` INTEGER NOT NULL DEFAULT 0 );";
 		String LOANS = "CREATE TABLE `Loans` ( `ID` INTEGER PRIMARY KEY AUTOINCREMENT, `client` INTEGER, `dataS` TEXT, `dataE` TEXT, `dataR` TEXT, `returned` INTEGER NOT NULL DEFAULT 0, FOREIGN KEY(`client`) REFERENCES `Clients`(`ID`) )";
 		String BOOKLOANED = "CREATE TABLE `BookLoaned` (`loanID` INTEGER NOT NULL,`bookColl` TEXT NOT NULL,FOREIGN KEY(`loanID`) REFERENCES `Loans`(`ID`),FOREIGN KEY(`bookColl`) REFERENCES `Books`(`collocation`));";
+		String BOOKREMOVED = "CREATE TABLE `BookRemoved` ( `bookColl` TEXT, `oldColl` TEXT, `reason` INTEGER NOT NULL DEFAULT 0, `blame` INTEGER DEFAULT -1, `note` TEXT )";
         
 		String PRAGMA_USER_VERSION = "PRAGMA user_version=";
 		
@@ -63,6 +64,8 @@ public class DBManager {
             stmt.execute(LOANS);
             //conn.createStatement();
             stmt.execute(BOOKLOANED);
+            
+            stmt.execute(BOOKREMOVED);
             
             stmt.execute(PRAGMA_USER_VERSION+USER_VERSION);
             
@@ -525,7 +528,8 @@ public class DBManager {
 							rs.getString("publishdate"),
 							rs.getString("thumbnail"),
 							rs.getString("collocation"),
-							rs.getInt("removed")
+							rs.getInt("removed"),
+							rs.getInt("damaged")
 						)
 					);
 			}
@@ -588,7 +592,8 @@ public class DBManager {
 						rs.getString("publishdate"),
 						rs.getString("thumbnail"),
 						rs.getString("collocation"),
-						rs.getInt("removed")
+						rs.getInt("removed"),
+						rs.getInt("damaged")
 						)
 					);
 
@@ -622,7 +627,8 @@ public class DBManager {
 						rs.getString("publishdate"),
 						rs.getString("thumbnail"),
 						rs.getString("collocation"),
-						rs.getInt("removed")
+						rs.getInt("removed"),
+						rs.getInt("damaged")
 						);
 
 			}
@@ -654,7 +660,8 @@ public class DBManager {
 						rs.getString("publishdate"),
 						rs.getString("thumbnail"),
 						rs.getString("collocation"),
-						rs.getInt("removed")
+						rs.getInt("removed"),
+						rs.getInt("damaged")
 						);
 
 			}
