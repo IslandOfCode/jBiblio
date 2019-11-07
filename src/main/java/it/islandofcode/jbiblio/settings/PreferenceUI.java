@@ -19,6 +19,8 @@ import javax.swing.border.EmptyBorder;
 
 import org.tinylog.Logger;
 
+import it.islandofcode.jbiblio.db.DBManager;
+import it.islandofcode.jbiblio.settings.Settings.PROPERTIES;
 import it.islandofcode.jbiblio.stats.LoadingUI;
 
 import javax.swing.DefaultComboBoxModel;
@@ -126,6 +128,8 @@ public class PreferenceUI extends JFrame {
 		contentPane.add(lblNewLabel_1);
 		
 		TXT_school = new JTextField();
+		TXT_school.setToolTipText("Attualmente non usato");
+		TXT_school.setEnabled(false);
 		TXT_school.setBounds(155, 220, 170, 20);
 		contentPane.add(TXT_school);
 		TXT_school.setColumns(10);
@@ -155,7 +159,7 @@ public class PreferenceUI extends JFrame {
 		B_save.setBounds(10, 259, 98, 26);
 		contentPane.add(B_save);
 		
-		JButton B_cancel = new JButton("Annulla");
+		JButton B_cancel = new JButton("Chiudi");
 		B_cancel.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				dispose();
@@ -172,19 +176,31 @@ public class PreferenceUI extends JFrame {
 	}
 	
 	private void loadValue() {
-		if(!Settings.propFileExist()) {
+		/*if(!Settings.propFileExist()) {
 			Settings.initPropFile();
-		}
+		}*/
 		
+		Map<PROPERTIES, String> pref = DBManager.getPreferences();
+		
+		try {
+			TXT_name.setText(pref.get(Settings.PROPERTIES.NOME_RESPONSABILE));
+			TXT_school.setText(pref.get(Settings.PROPERTIES.NOME_SCUOLA));
+			CB_lenght.setSelectedItem(Integer.parseInt(pref.get(Settings.PROPERTIES.DURATA_PRESTITO)));
+			CB_title.setSelectedItem(pref.get(Settings.PROPERTIES.TITOLO_RESPONSABILE));
+		} catch (NumberFormatException | NullPointerException e) {
+			Logger.error(e);
+			JOptionPane.showMessageDialog(contentPane, "<html>Errore lettura preferenze!:<br/>Errore: <code>"+e.getMessage(), "Errore!", JOptionPane.ERROR_MESSAGE);
+		}
+		/*
 		try {
 			TXT_name.setText(Settings.getValue(Settings.PROPERTIES.NOME_RESPONSABILE));
 			TXT_school.setText(Settings.getValue(Settings.PROPERTIES.NOME_SCUOLA));
 			CB_lenght.setSelectedItem(Integer.parseInt(Settings.getValue(Settings.PROPERTIES.DURATA_PRESTITO)));
 			CB_title.setSelectedItem(Settings.getValue(Settings.PROPERTIES.TITOLO_RESPONSABILE));
-		} catch (PropertiesException e) {
+		} catch (NumberFormatException | PropertiesException e) {
 			Logger.error(e);
 			JOptionPane.showMessageDialog(contentPane, "<html>Impossibile leggere file preferenze:<br/>Errore: <code>"+e.getMessage(), "Errore!", JOptionPane.ERROR_MESSAGE);
-		}
+		}*/
 		
 	}
 	
@@ -208,12 +224,21 @@ public class PreferenceUI extends JFrame {
 	}
 	
 	private boolean saveProperties() {
+		
+		if(!DBManager.updatePreferences(oldValue)) {
+			Logger.error("Errore salvataggio preferenze nel database!");
+			JOptionPane.showMessageDialog(contentPane, "Impossibile salvare le preferenze.", "Errore!", JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+		
+		return true;
+		/*
 		try {
-			return Settings.setValueMap(oldValue);
+			//return Settings.setValueMap(oldValue);
 		} catch (PropertiesException e) {
 			Logger.error(e);
 			JOptionPane.showMessageDialog(contentPane, "<html>Impossibile salvare file preferenze:<br/>Errore: <code>"+e.getMessage(), "Errore!", JOptionPane.ERROR_MESSAGE);
 		}
-		return false;
+		return false;*/
 	}
 }

@@ -170,19 +170,47 @@ public class EditBook extends JFrame implements IRemoteUpdate{
 				}
 
 				if(MODE==BOOKMODE.ADD) {
-					
+					if(DBManager.checkBookAlreadyPresent(TXT_collocation.getText().trim().toUpperCase())) {
+						//JOptionPane.showMessageDialog(contentPane, "Questa collocazione è già presente nel database.", "Libro già presente", JOptionPane.WARNING_MESSAGE);
+						int r = JOptionPane.showConfirmDialog(contentPane,
+								"<html>Si è scelta una collocazione che è già associata ad un altro libro.<br/>"
+								+ "Vuoi che jBiblio ti fornisca una collocazione libera automaticamente?",
+								"Collocazione presente!", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+						if(r==0) {
+							TXT_collocation.setText(DBManager.nextCollocation(false));
+						}
+						return;
+					}
+					/*
 					if(DBManager.checkBookAlreadyPresent(TXT_collocation.getText().trim().toUpperCase())) {
 						JOptionPane.showMessageDialog(contentPane, "Questa collocazione è già presente nel database.", "Libro già presente", JOptionPane.WARNING_MESSAGE);
 						return;
-					}
+					}*/
 					
 					book = retriveDataFromForm();
 					DBManager.addNewBook(book);
+					//incremento la collocazione.
+					if(book.getCollocation().equals(DBManager.nextCollocation(false))) {
+						DBManager.nextCollocation(true);
+					}
 					Logger.info("Nuovo libro aggiunto, ISBN:"+book.getISBN() + " COLLOCAZIONE:"+book.getCollocation());
 				} else { //EDIT
 					Book bookUpdate = retriveDataFromForm();
 					
 					if(!book.equals(bookUpdate)) {
+						if(book.getCollocation()!=bookUpdate.getCollocation()) {
+							if(DBManager.checkBookAlreadyPresent(bookUpdate.getCollocation())) {
+								//JOptionPane.showMessageDialog(contentPane, "Questa collocazione è già presente nel database.", "Libro già presente", JOptionPane.WARNING_MESSAGE);
+								int r = JOptionPane.showConfirmDialog(contentPane,
+										"<html>Si è scelta una collocazione che è già associata ad un altro libro.<br/>"
+										+ "Vuoi che jBiblio ti fornisca una collocazione libera automaticamente?",
+										"Collocazione presente!", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+								if(r==0) {
+									TXT_collocation.setText(DBManager.nextCollocation(false));
+								}
+								return;
+							}
+						}
 						DBManager.updateBook(book.getCollocation(), bookUpdate);
 						JOptionPane.showMessageDialog(contentPane, "Libro aggiornato", "Aggiornamento", JOptionPane.INFORMATION_MESSAGE);
 						Logger.info("Libro ["+book.getCollocation()+"], aggiornato con Collocazione:"+book.getCollocation());
@@ -220,6 +248,10 @@ public class EditBook extends JFrame implements IRemoteUpdate{
 		case ADD:
 			this.setTitle("Aggiungi nuovo libro");
 			B_addBook.setText("Aggiungi libro");
+			
+			String newColl = DBManager.nextCollocation(false);
+			TXT_collocation.setText(newColl);
+
 			break;
 		case EDIT:
 			book = DBManager.getBookByCollocation(ID);

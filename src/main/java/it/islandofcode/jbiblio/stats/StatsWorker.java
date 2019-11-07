@@ -28,7 +28,6 @@ import it.islandofcode.jbiblio.artefact.Client;
 import it.islandofcode.jbiblio.artefact.Loan;
 import it.islandofcode.jbiblio.db.DBDate;
 import it.islandofcode.jbiblio.db.DBManager;
-import it.islandofcode.jbiblio.settings.Settings;
 import it.islandofcode.jbiblio.stats.LoadingUI.WORKTYPE;
 
 public class StatsWorker extends SwingWorker<Object, Object> {
@@ -95,9 +94,14 @@ public class StatsWorker extends SwingWorker<Object, Object> {
 		}
 
 		//Altre variabili, in comune ad entrambi i template
+		root.put("titoloOwner", DBManager.getPreferenceOwnerTitle());
+		root.put("nomeOwner", DBManager.getPreferenceOwnerName());
+		root.put("schoolName", DBManager.getPreferenceSchoolName());
+		/*
 		root.put("titoloOwner", Settings.getValue(Settings.PROPERTIES.TITOLO_RESPONSABILE));
 		root.put("nomeOwner", Settings.getValue(Settings.PROPERTIES.NOME_RESPONSABILE));
 		root.put("schoolName", Settings.getValue(Settings.PROPERTIES.NOME_SCUOLA));
+		 */
 				
 		
 		Template temp = cfg.getTemplate(template.getName());

@@ -3,13 +3,18 @@ package it.islandofcode.jbiblio;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -29,16 +34,12 @@ import it.islandofcode.jbiblio.artefact.Book;
 import it.islandofcode.jbiblio.artefact.Client;
 import it.islandofcode.jbiblio.artefact.Loan;
 import it.islandofcode.jbiblio.companioapp.HttpHandler;
-import it.islandofcode.jbiblio.companioapp.IRemoteUpdate;
 import it.islandofcode.jbiblio.companioapp.HttpHandler.REGISTER_MODE;
+import it.islandofcode.jbiblio.companioapp.IRemoteUpdate;
 import it.islandofcode.jbiblio.db.DBDate;
 import it.islandofcode.jbiblio.db.DBManager;
 import it.islandofcode.jbiblio.db.ReadOnlyTableModel;
-import it.islandofcode.jbiblio.settings.PropertiesException;
 import it.islandofcode.jbiblio.settings.Settings;
-
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 
 public class AddLoan extends JFrame implements IRemoteUpdate{
 
@@ -55,6 +56,8 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 	private Client client;
 	private Loan loan;
 	private JTable resultTable;
+	
+	private JComboBox<Integer> CB_lenghtLoan;
 
 	/**
 	 * Create the frame.
@@ -68,41 +71,14 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 			}
 		});
 		
-		HttpHandler.getInstance().registerUI(REGISTER_MODE.INPUT_DATA, this);
-		
 		this.client = C;
-		searched = new ArrayList<Book>();
-		if(loan==null) {
-			String dateEnd = null;
-			//try {
-				//dateEnd = Loan.getEndLoanDate(Loan.getTodayDBFormat());
-			int lenght = Settings.DEFAULT_DURATA_PRESTITO;
-			try {
-				lenght = Integer.parseInt(Settings.getValue(Settings.PROPERTIES.DURATA_PRESTITO));
-			} catch (NumberFormatException | PropertiesException e1) {
-				Logger.error(e1);
-				JOptionPane.showMessageDialog(contentPane,
-						"Durata prestito impostata a valore di default: " + Settings.DEFAULT_DURATA_PRESTITO,
-						"Impossibile leggere file di impostazioni!",
-						JOptionPane.ERROR_MESSAGE);
-			}
-			dateEnd = DBDate.todayPlus(lenght).getSQLiteDate();
-				
-				Logger.debug("DATAFINE:"+dateEnd);
-			/*} catch (ParseException e1) {
-				Logger.error(e1);
-				JOptionPane.showMessageDialog(contentPane, "Data fine prestito in formato errato!", "Parse error!", JOptionPane.ERROR_MESSAGE);
-				return;
-			}*/
-			loan = new Loan(client.getID(), DBDate.TODAY, dateEnd);
-		}
-		
-		
+		HttpHandler.getInstance().registerUI(REGISTER_MODE.INPUT_DATA, this);
+	
 		setTitle("Nuovo prestito");
 		setResizable(false);
 		setAlwaysOnTop(true);
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		setBounds(100, 100, 495, 300);
+		setBounds(100, 100, 495, 347);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -149,10 +125,14 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 		B_completeLoan = new JButton("Completa prestito");
 		B_completeLoan.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				confirmLoan();
+				if(resultTable==null || resultTable.getModel().getRowCount()<=0) {
+					JOptionPane.showMessageDialog(contentPane, "Non ci sono libri nella lista, aggiungere almeno un libro!", "Attenzione!", JOptionPane.WARNING_MESSAGE);
+				} else {
+					confirmLoan();
+				}
 			}
 		});
-		B_completeLoan.setBounds(318, 235, 161, 26);
+		B_completeLoan.setBounds(318, 281, 161, 26);
 		contentPane.add(B_completeLoan);
 		
 		B_removeBook = new JButton("Rimuovi libro");
@@ -178,8 +158,9 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 					
 					if(searched.isEmpty()) {
 						SP_book.setViewportView(null);
-						searched = new ArrayList<Book>();
-						loan.setBooks(searched);
+						//searched = new ArrayList<Book>();
+						if(loan!=null)
+							loan.setBooks(searched);
 						resultTable = null;
 						return;
 					}
@@ -190,8 +171,29 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 				}
 			}
 		});
-		B_removeBook.setBounds(10, 235, 129, 26);
+		B_removeBook.setBounds(10, 281, 129, 26);
 		contentPane.add(B_removeBook);
+		
+		JLabel lblDurataDelPrestito = new JLabel("Durata del prestito:");
+		lblDurataDelPrestito.setBounds(10, 234, 138, 16);
+		contentPane.add(lblDurataDelPrestito);
+		
+		CB_lenghtLoan = new JComboBox<Integer>();
+		CB_lenghtLoan.setBounds(140, 230, 62, 25);
+		contentPane.add(CB_lenghtLoan);
+		
+		JSeparator separator_1 = new JSeparator();
+		separator_1.setBounds(10, 267, 467, 2);
+		contentPane.add(separator_1);
+		
+		//*******************************************************************************
+		
+		Integer[] durate = Arrays.stream(Settings.DURATE).boxed().toArray(Integer[]::new);
+		CB_lenghtLoan.setModel(new DefaultComboBoxModel<Integer>(durate));
+		
+		//CB_lenghtLoan.setSelectedItem(Integer.valueOf(Settings.DEFAULT_DURATA_PRESTITO));
+		CB_lenghtLoan.setSelectedItem(DBManager.getPreferenceDaysLoan());
+		searched = new ArrayList<Book>();
 	}
 	
 	/**
@@ -199,6 +201,31 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 	 * e non all'ActionListener.
 	 */
 	private void confirmLoan() {
+		String dateEnd = null;
+		//try {
+		//dateEnd = Loan.getEndLoanDate(Loan.getTodayDBFormat());
+		/*int lenght = Settings.DEFAULT_DURATA_PRESTITO;
+		try {
+			//lenght = Integer.parseInt(Settings.getValue(Settings.PROPERTIES.DURATA_PRESTITO));
+			lenght = Integer.parseInt((String) CB_lenghtLoan.getSelectedItem());
+		} catch (NumberFormatException | PropertiesException e1) {
+			Logger.error(e1);
+			JOptionPane.showMessageDialog(contentPane,
+					"Durata prestito impostata a valore di default: " + Settings.DEFAULT_DURATA_PRESTITO,
+					"Impossibile leggere le impostazioni!",
+					JOptionPane.ERROR_MESSAGE);
+		}*/
+		int lenght = (int)CB_lenghtLoan.getSelectedItem();
+		dateEnd = DBDate.todayPlus(lenght).getSQLiteDate();
+				
+		Logger.debug("DATAFINE:"+dateEnd);
+			/*} catch (ParseException e1) {
+				Logger.error(e1);
+				JOptionPane.showMessageDialog(contentPane, "Data fine prestito in formato errato!", "Parse error!", JOptionPane.ERROR_MESSAGE);
+				return;
+			}*/
+		loan = new Loan(client.getID(), DBDate.TODAY, dateEnd);
+
 		loan.setBooks(searched);
 		
 		int IDloan = DBManager.addNewLoan(loan);

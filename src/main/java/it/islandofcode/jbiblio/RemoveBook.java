@@ -280,7 +280,14 @@ public class RemoveBook extends JFrame {
 			return false;
 		}
 		
-		client = DBManager.getClientByID(Integer.parseInt(TXT_IDclient.getText().trim()));
+		try {
+			client = DBManager.getClientByID(Integer.parseInt(TXT_IDclient.getText().trim()));
+		} catch (NumberFormatException e) {
+			JOptionPane.showMessageDialog(contentPane, "L'ID non è un numero.",
+					"Attenzione!", JOptionPane.WARNING_MESSAGE);
+			return false;
+		}
+		
 		if(client==null || client.isRemoved()) {
 			JOptionPane.showMessageDialog(contentPane, "L'ID indicato non è associato ad alcun cliente attivo.", "Attenzione!", JOptionPane.WARNING_MESSAGE);
 			return false;

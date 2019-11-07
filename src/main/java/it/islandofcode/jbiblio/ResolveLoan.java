@@ -111,23 +111,33 @@ public class ResolveLoan extends JFrame {
 		B_search = new JButton("Cerca");
 		B_search.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				String loanid = TXT_idLoan.getText().trim();
-				if(loanid.isEmpty()) {
-					JOptionPane.showMessageDialog(contentPane, "Un codice deve essere indicato", "Attenzione", JOptionPane.WARNING_MESSAGE);
+				if (TXT_idLoan.getText().trim().isEmpty()) {
+					JOptionPane.showMessageDialog(contentPane, "Un codice deve essere indicato", "Attenzione",
+							JOptionPane.WARNING_MESSAGE);
 					return;
 				}
-				
-				if(DBManager.checkIfLoanReturned(Integer.parseInt(loanid)) ) {
-					JOptionPane.showMessageDialog(contentPane, "Prestito già risolto.", "Attenzione", JOptionPane.WARNING_MESSAGE);
+				int loanid;
+				try {
+					loanid = Integer.parseInt(TXT_idLoan.getText().trim());
+				} catch (NumberFormatException e1) {
+					JOptionPane.showMessageDialog(contentPane, "Il codice non è un numero.", "Attenzione!",
+							JOptionPane.WARNING_MESSAGE);
 					return;
 				}
-				
-				Loan L = DBManager.getLoan(Integer.parseInt(loanid));
-				if(L==null) {
-					JOptionPane.showMessageDialog(contentPane, "Prestito non esistente", "Attenzione", JOptionPane.WARNING_MESSAGE);
+
+				if (DBManager.checkIfLoanReturned(loanid)) {
+					JOptionPane.showMessageDialog(contentPane, "Prestito già risolto.", "Attenzione",
+							JOptionPane.WARNING_MESSAGE);
 					return;
 				}
-				
+
+				Loan L = DBManager.getLoan(loanid);
+				if (L == null) {
+					JOptionPane.showMessageDialog(contentPane, "Prestito non esistente", "Attenzione",
+							JOptionPane.WARNING_MESSAGE);
+					return;
+				}
+
 				populateForm(L);
 			}
 		});

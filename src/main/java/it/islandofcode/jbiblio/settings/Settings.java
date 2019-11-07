@@ -1,5 +1,5 @@
 package it.islandofcode.jbiblio.settings;
-
+/*
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -7,10 +7,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.Properties;
 
-import org.tinylog.Logger;
+import org.tinylog.Logger;*/
+
+import java.util.Map;
 
 public class Settings {
 
@@ -18,7 +19,8 @@ public class Settings {
 		DURATA_PRESTITO,
 		TITOLO_RESPONSABILE,
 		NOME_RESPONSABILE,
-		NOME_SCUOLA
+		NOME_SCUOLA,
+		ULTIMA_COLLOCAZIONE
 	}
 	
 	/**
@@ -41,7 +43,7 @@ public class Settings {
 		return true;
 	}
 	
-	public static boolean initPropFile() {
+	/*public static boolean initPropFile() {
 		Properties prop = new Properties();
 		prop.setProperty(PROPERTIES.DURATA_PRESTITO.name(), String.valueOf(DEFAULT_DURATA_PRESTITO));
 		prop.setProperty(PROPERTIES.TITOLO_RESPONSABILE.name(), DEFAULT_TITOLO_RESPONSABILE);
@@ -136,6 +138,6 @@ public class Settings {
 			throw new PropertiesException("Errore accesso al file.");
         }
 		return true;
-	}
+	}*/
 	
 }

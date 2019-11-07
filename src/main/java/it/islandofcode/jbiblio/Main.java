@@ -9,7 +9,6 @@ import javax.swing.JOptionPane;
 import org.tinylog.Logger;
 
 import it.islandofcode.jbiblio.db.DBManager;
-import it.islandofcode.jbiblio.settings.Settings;
 
 public class Main {
 
@@ -46,9 +45,9 @@ public class Main {
 			}
 		}
 		
-		if(!Settings.propFileExist()) {
+		/*if(!Settings.propFileExist()) {
 			Settings.initPropFile();
-		}
+		}*/
 
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {

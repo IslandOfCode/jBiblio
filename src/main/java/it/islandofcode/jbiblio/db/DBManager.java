@@ -24,12 +24,20 @@ import it.islandofcode.jbiblio.artefact.Blame;
 import it.islandofcode.jbiblio.artefact.Book;
 import it.islandofcode.jbiblio.artefact.Client;
 import it.islandofcode.jbiblio.artefact.Loan;
+import it.islandofcode.jbiblio.settings.Settings;
+import it.islandofcode.jbiblio.settings.Settings.PROPERTIES;
 
 public class DBManager {
 
 	public static final String DBFILEPATH = "db/";
 	public static final String DBFILENAME = "jbiblio.db";
-	public static final int USER_VERSION = 20;
+	public static final int USER_VERSION = 21;
+	
+	/*public static final String  = "";
+	public static final String = "";
+	public static final String = "";
+	public static final String = "";*/
+	
 	
 	public static void createDB() {
 		String URL = "jdbc:sqlite:"+DBFILEPATH+DBFILENAME;
@@ -53,7 +61,9 @@ public class DBManager {
 		String LOANS = "CREATE TABLE `Loans` ( `ID` INTEGER PRIMARY KEY AUTOINCREMENT, `client` INTEGER, `dataS` TEXT, `dataE` TEXT, `dataR` TEXT, `returned` INTEGER NOT NULL DEFAULT 0, FOREIGN KEY(`client`) REFERENCES `Clients`(`ID`) )";
 		String BOOKLOANED = "CREATE TABLE `BookLoaned` (`loanID` INTEGER NOT NULL,`bookColl` TEXT NOT NULL,FOREIGN KEY(`loanID`) REFERENCES `Loans`(`ID`),FOREIGN KEY(`bookColl`) REFERENCES `Books`(`collocation`));";
 		String BOOKREMOVED = "CREATE TABLE `BookRemoved` ( `bookColl` TEXT, `oldColl` TEXT, `reason` TEXT NOT NULL DEFAULT 'RITIRATO', `blame` INTEGER DEFAULT -1, `note` TEXT, `date` TEXT NOT NULL )";
-        
+        String PREFERENCES = "CREATE TABLE `Preferences` ( `DURATA_PRESTITO` TEXT NOT NULL DEFAULT '15', `TITOLO_RESPONSABILE` TEXT NOT NULL DEFAULT 'Referente', `NOME_RESPONSABILE` TEXT DEFAULT '', `NOME_SCUOLA` TEXT DEFAULT '', `ULTIMA_COLLOCAZIONE` TEXT NOT NULL DEFAULT '01A' )";
+		String ADD_DEFAULT_PREF = "insert into Preferences default values";
+		
 		String PRAGMA_USER_VERSION = "PRAGMA user_version=";
 		
         try (Connection conn = DriverManager.getConnection(URL);
@@ -67,6 +77,10 @@ public class DBManager {
             stmt.execute(BOOKLOANED);
             
             stmt.execute(BOOKREMOVED);
+
+            stmt.execute(PREFERENCES);
+            
+            stmt.execute(ADD_DEFAULT_PREF);
             
             stmt.execute(PRAGMA_USER_VERSION+USER_VERSION);
             
@@ -1417,4 +1431,131 @@ public class DBManager {
 
 		return null;
 	}
+
+	/*
+	 * ######################## PREFERENZE
+	 */
+	
+	private static String getPreference(String key) {
+		String sql = "SELECT * FROM Preferences";
+		try (Connection conn = connectDB()) {
+
+			ResultSet rs = conn.createStatement().executeQuery(sql);
+
+			// loop through the result set
+			if(rs.next()) {
+				return rs.getString(key);
+			}
+			
+		} catch (SQLException e) {
+			Logger.error(e);
+		}
+		return null;
+	}
+	
+	public static Map<PROPERTIES, String> getPreferences(){
+		HashMap<PROPERTIES, String> ret = new HashMap<>();
+		String sql = "SELECT * FROM Preferences";
+		
+		try (Connection conn = connectDB()) {
+
+			ResultSet rs = conn.createStatement().executeQuery(sql);
+
+			// loop through the result set
+			if(rs.next()) {
+				ret.put(PROPERTIES.DURATA_PRESTITO, rs.getString(PROPERTIES.DURATA_PRESTITO.name()));
+				ret.put(PROPERTIES.TITOLO_RESPONSABILE, rs.getString(PROPERTIES.TITOLO_RESPONSABILE.name()));
+				ret.put(PROPERTIES.NOME_RESPONSABILE, rs.getString(PROPERTIES.NOME_RESPONSABILE.name()));
+				ret.put(PROPERTIES.NOME_SCUOLA, rs.getString(PROPERTIES.NOME_SCUOLA.name()));
+				ret.put(PROPERTIES.ULTIMA_COLLOCAZIONE, rs.getString(PROPERTIES.ULTIMA_COLLOCAZIONE.name()));
+			}
+			
+			return ret;
+		} catch (SQLException e) {
+			Logger.error(e);
+		}
+		return ret;
+	}
+	
+	public static int getPreferenceDaysLoan() {
+		String p = getPreference(PROPERTIES.DURATA_PRESTITO.name());
+		try {
+			return Integer.parseInt(p);
+		} catch(NumberFormatException nfe) {
+			Logger.error(nfe);
+			return Settings.DEFAULT_DURATA_PRESTITO;
+		}
+	}
+	
+	public static String getPreferenceOwnerTitle() {
+		return getPreference(PROPERTIES.TITOLO_RESPONSABILE.name());
+	}
+	
+	public static String getPreferenceOwnerName() {
+		return getPreference(PROPERTIES.NOME_RESPONSABILE.name());
+	}
+	
+	public static String getPreferenceSchoolName() {
+		return getPreference(PROPERTIES.NOME_SCUOLA.name());
+	}
+	
+	/**
+	 * Crea una nuova collocazione e sovrascrive la precedente nelle preferenze
+	 * @param update TRUE se si vuole aggiornare la collocazione, FALSE per ritornare il valore senza aggiornare (check)
+	 * @return una collocazione nel formato XXZ, dove XX è un numero da 01 a 99 e Z una lettere dell'alfabeto
+	 */
+	public static String nextCollocation(boolean update) {
+		String P = getPreference(PROPERTIES.ULTIMA_COLLOCAZIONE.name());
+		
+		int N = Integer.parseInt(P.substring(0, 2));
+		char C = P.substring(2).charAt(0);
+		
+		while(DBManager.getBookByCollocation(P)!=null) {
+			if(N<99)
+				N++;
+			else {
+				N = 1;
+				if(C<'Z')
+					C++;
+				else
+					C='A';
+			}
+
+			P = String.format("%02d", N) + C;
+			
+		}// while(DBManager.getBookByCollocation(P)!=null);
+
+		if(update) {
+			boolean r = updatePreference(PROPERTIES.ULTIMA_COLLOCAZIONE, P);
+			return r?P:null;
+		}
+		
+		return P;
+	}
+	
+	public static boolean updatePreferences(Map<PROPERTIES, String> map) {
+		String sql = "UPDATE Preferences SET ";
+
+		for(PROPERTIES P : map.keySet()) {
+			sql += P.name()+"='"+map.get(P)+"',";
+		}
+		sql = sql.substring(0, sql.length() - 1);
+
+		//Logger.debug("\n\t"+sql+"\n");
+		try (Connection conn = connectDB()) {
+			
+			return (conn.createStatement().executeUpdate(sql) > 0);
+			
+		} catch (SQLException e) {
+			Logger.error(e);
+		}
+		return false;
+	}
+	
+	public static boolean updatePreference(PROPERTIES key, String value) {
+		HashMap<PROPERTIES, String> map = new HashMap<>();
+		map.put(key, value);
+		return updatePreferences(map);
+	}
+
 }
