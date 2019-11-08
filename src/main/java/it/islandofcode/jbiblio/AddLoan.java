@@ -58,6 +58,7 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 	private JTable resultTable;
 	
 	private JComboBox<Integer> CB_lenghtLoan;
+	private JTextField TXT_dateStart;
 
 	/**
 	 * Create the frame.
@@ -193,6 +194,17 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 		
 		//CB_lenghtLoan.setSelectedItem(Integer.valueOf(Settings.DEFAULT_DURATA_PRESTITO));
 		CB_lenghtLoan.setSelectedItem(DBManager.getPreferenceDaysLoan());
+		
+		JLabel lblInizioPrestito = new JLabel("Inizio prestito:");
+		lblInizioPrestito.setBounds(220, 235, 83, 16);
+		contentPane.add(lblInizioPrestito);
+		
+		TXT_dateStart = new JTextField();
+		TXT_dateStart.setBounds(318, 235, 159, 21);
+		contentPane.add(TXT_dateStart);
+		
+		TXT_dateStart.setText(DBDate.TODAY_HUMAN);
+
 		searched = new ArrayList<Book>();
 	}
 	
@@ -201,30 +213,24 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 	 * e non all'ActionListener.
 	 */
 	private void confirmLoan() {
-		String dateEnd = null;
-		//try {
-		//dateEnd = Loan.getEndLoanDate(Loan.getTodayDBFormat());
-		/*int lenght = Settings.DEFAULT_DURATA_PRESTITO;
-		try {
-			//lenght = Integer.parseInt(Settings.getValue(Settings.PROPERTIES.DURATA_PRESTITO));
-			lenght = Integer.parseInt((String) CB_lenghtLoan.getSelectedItem());
-		} catch (NumberFormatException | PropertiesException e1) {
-			Logger.error(e1);
-			JOptionPane.showMessageDialog(contentPane,
-					"Durata prestito impostata a valore di default: " + Settings.DEFAULT_DURATA_PRESTITO,
-					"Impossibile leggere le impostazioni!",
-					JOptionPane.ERROR_MESSAGE);
-		}*/
 		int lenght = (int)CB_lenghtLoan.getSelectedItem();
-		dateEnd = DBDate.todayPlus(lenght).getSQLiteDate();
+		//String dateEnd = DBDate.todayPlus(lenght).getSQLiteDate();
+		
+		if(	!TXT_dateStart.getText().trim().matches("^\\d{2}\\/\\d{2}\\/\\d{4}$") ) {
+			JOptionPane.showMessageDialog(contentPane, "<html>Data fine prestito in formato errato!<br/>"
+					+ "Formato accettato: <b>dd/mm/aaaa</b><br/>"
+					+ "Esempio: <b>01/01/2020</b>", "Parse error!", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+		
+		DBDate d = new DBDate(TXT_dateStart.getText().trim());
+		d.addDays(lenght);
+		
+		String dateEnd = d.getSQLiteDate(); 
 				
 		Logger.debug("DATAFINE:"+dateEnd);
-			/*} catch (ParseException e1) {
-				Logger.error(e1);
-				JOptionPane.showMessageDialog(contentPane, "Data fine prestito in formato errato!", "Parse error!", JOptionPane.ERROR_MESSAGE);
-				return;
-			}*/
-		loan = new Loan(client.getID(), DBDate.TODAY, dateEnd);
+
+		loan = new Loan(client.getID(), TXT_dateStart.getText().trim(), dateEnd);
 
 		loan.setBooks(searched);
 		

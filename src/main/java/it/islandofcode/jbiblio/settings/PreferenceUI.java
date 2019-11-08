@@ -129,7 +129,6 @@ public class PreferenceUI extends JFrame {
 		
 		TXT_school = new JTextField();
 		TXT_school.setToolTipText("Attualmente non usato");
-		TXT_school.setEnabled(false);
 		TXT_school.setBounds(155, 220, 170, 20);
 		contentPane.add(TXT_school);
 		TXT_school.setColumns(10);

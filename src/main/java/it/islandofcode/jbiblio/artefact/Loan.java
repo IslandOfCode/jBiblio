@@ -1,16 +1,12 @@
 package it.islandofcode.jbiblio.artefact;
 
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.util.List;
 
 public class Loan {
 	
 	public static final int RETURNED = 1;
 	public static final int NOT_RETURNED = 0;
-	
-	public static final SimpleDateFormat DBDateFormatter = new SimpleDateFormat("yyyy-MM-dd");
-	public static final SimpleDateFormat HumanDateFormatter = new SimpleDateFormat("dd/MM/yyyy");
+
 	
 	private int ID;
 	private int client;
@@ -137,7 +133,7 @@ public class Loan {
 
 	public void setReturned(int returned) {
 		this.returned = (returned>=1)?1:0;
-		this.dateReturned = (returned>=1)?LocalDate.now().toString():"";
+		//this.dateReturned = (returned>=1)?LocalDate.now().toString():"";
 	}
 
 	public boolean isIDset() {
@@ -147,4 +143,19 @@ public class Loan {
 	public boolean isReturned() {
 		return returned==1;
 	}
+
+	@Override
+	public Loan clone() throws CloneNotSupportedException {
+		// CONSTRUCTOR COPY
+		return new Loan(
+				this.getID(),
+				this.getClient(),
+				this.getDateStart(),
+				this.getDateEnd(),
+				this.getDateReturned(),
+				this.getBooks(),
+				this.getReturned()
+				);
+	}
+
 }

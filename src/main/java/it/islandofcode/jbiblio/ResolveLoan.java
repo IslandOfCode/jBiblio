@@ -61,11 +61,14 @@ public class ResolveLoan extends JFrame {
 	private JLabel TXT_endLoan;
 	private JLabel TXT_returnedLoan;
 	private JScrollPane SP_loans;
+	private JTextField TXT_customDateEndLoan;
+	private JLabel L_dateEndLoan;
 	
 	private JTable listOfBook;
 	
 	private Loan theLoan;
 	private GUI parent;
+	
 
 	/**
 	 * IDLoan deve valere >0 se si vuole che i campi vengano popolati direttamente
@@ -138,7 +141,7 @@ public class ResolveLoan extends JFrame {
 					return;
 				}
 
-				populateForm(L);
+				theLoan = populateForm(L);
 			}
 		});
 		B_search.setBounds(272, 8, 74, 22);
@@ -156,14 +159,20 @@ public class ResolveLoan extends JFrame {
 					return;
 				}
 				
+				if(	!TXT_customDateEndLoan.getText().trim().matches("^\\d{2}\\/\\d{2}\\/\\d{4}$") ) {
+					JOptionPane.showMessageDialog(contentPane, "<html>Data fine prestito in formato errato!<br/>"
+							+ "Formato accettato: <b>dd/mm/aaaa</b><br/>"
+							+ "Esempio: <b>01/01/2020</b>", "Parse error!", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				
+				DBDate d = new DBDate(TXT_customDateEndLoan.getText().trim());
+				
 				int r = JOptionPane.showConfirmDialog(contentPane, "Sei sicuro di voler risolvere questo prestito?", "Conferma risoluzione prestito", JOptionPane.YES_NO_OPTION);
 				if(r==JOptionPane.NO_OPTION) return;
 				
-				//qui imposto la data di ritorno del prestito (quella odierna)
-				//prima di eseguire la query sul db
-				theLoan.setDateReturned(LocalDate.now().toString());
-				//oltre che il flag "returned"
 				theLoan.setReturned(Loan.RETURNED);
+				theLoan.setDateReturned(d.getSQLiteDate());
 				
 				if( !DBManager.resolveLoan(theLoan) ) {
 					JOptionPane.showMessageDialog(contentPane, "Errore database, impossibile risolvere il prestito!", "ERRORE", JOptionPane.ERROR_MESSAGE);					
@@ -282,6 +291,16 @@ public class ResolveLoan extends JFrame {
 		B_printReceipt.setBounds(164, 269, 113, 24);
 		contentPane.add(B_printReceipt);
 		
+		TXT_customDateEndLoan = new JTextField();
+		TXT_customDateEndLoan.setBounds(343, 108, 89, 20);
+		contentPane.add(TXT_customDateEndLoan);
+		TXT_customDateEndLoan.setColumns(10);
+		
+		L_dateEndLoan = new JLabel("Data restituzione:");
+		L_dateEndLoan.setFont(new Font("Dialog", Font.ITALIC, 12));
+		L_dateEndLoan.setBounds(232, 110, 107, 16);
+		contentPane.add(L_dateEndLoan);
+		
 		if(parent!=null)
 			this.parent.signalFrameOpened(getTitle());
 		
@@ -298,7 +317,7 @@ public class ResolveLoan extends JFrame {
 			}
 			
 			TXT_idLoan.setText(""+L.getID());
-			populateForm(L);
+			theLoan = populateForm(L);
 			
 			if(viewOnly || L.getReturned()!=0) {
 				setViewOnlyMode();
@@ -354,6 +373,7 @@ public class ResolveLoan extends JFrame {
 		TXT_endLoan.setText("");
 		TXT_idLoan.setText("");
 		TXT_returnedLoan.setText("");
+		TXT_customDateEndLoan.setText("");
 		SP_loans.setViewportView(null);
 		listOfBook = null;
 		theLoan = null;
@@ -365,17 +385,19 @@ public class ResolveLoan extends JFrame {
 		TXT_idLoan.setEnabled(false);
 		B_search.setEnabled(false);
 		B_clean.setEnabled(false);
+		contentPane.remove(TXT_customDateEndLoan);
+		contentPane.remove(L_dateEndLoan);
 		setTitle("Visualizza dettagli prestito");
 	}
 
-	private void populateForm(Loan L) {
-		Client C = DBManager.getClientByID(L.getClient());
+	private Loan populateForm(Loan LN) {
+		Client C = DBManager.getClientByID(LN.getClient());
 
 		//computo alcuni dati intermedi
 		String end = null;
 		//end = Loan.convertDateToHuman(L.getDateEnd());
-		end = (new DBDate(L.getDateEnd())).getHumanDate();
-		int late = LocalDate.parse(L.getDateEnd()).compareTo(LocalDate.now()); //0 uguale, >0 in orario, <0 in ritardo
+		end = (new DBDate(LN.getDateEnd())).getHumanDate();
+		int late = LocalDate.parse(LN.getDateEnd()).compareTo(LocalDate.now()); //0 uguale, >0 in orario, <0 in ritardo
 		
 		//creo testo per data fine
 		String txt = ENDLOANMSG.replace(DATE_TOKEN, end);
@@ -392,16 +414,22 @@ public class ResolveLoan extends JFrame {
 		TXT_nominative.setText(C.getCognome()+", "+C.getNome());
 		TXT_class.setText(C.getClasse()+C.getSezione());
 		
-		TXT_startLoan.setText((new DBDate(L.getDateStart())).getHumanDate());
-		if(!L.getDateReturned().isEmpty())
-			TXT_returnedLoan.setText( new DBDate(L.getDateReturned()).getHumanDate() );
+		TXT_startLoan.setText((new DBDate(LN.getDateStart())).getHumanDate());
+		if(!LN.getDateReturned().isEmpty())
+			TXT_returnedLoan.setText( new DBDate(LN.getDateReturned()).getHumanDate() );
 		else
 			TXT_returnedLoan.setText("<html><i>in corso");
-		listOfBook = new JTable(generateTableModel(L));
+		listOfBook = new JTable(generateTableModel(LN));
 		
 		listOfBook.setEnabled(false);
 		SP_loans.setViewportView(listOfBook);
 		
-		theLoan = L;
+		if(LN.getDateReturned().isEmpty()) {
+			TXT_customDateEndLoan.setText(DBDate.TODAY_HUMAN);
+		} else {
+			TXT_customDateEndLoan.setText(new DBDate(LN.getDateReturned()).getHumanDate());
+		}
+
+		return LN;
 	}
 }

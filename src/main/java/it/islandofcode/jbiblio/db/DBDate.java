@@ -1,5 +1,6 @@
 package it.islandofcode.jbiblio.db;
 
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -9,8 +10,12 @@ public class DBDate {
 			.appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
 			.appendOptional(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
 			.toFormatter();
+	
+	public static final SimpleDateFormat DBDateFormatter = new SimpleDateFormat("yyyy-MM-dd");
+	public static final SimpleDateFormat HumanDateFormatter = new SimpleDateFormat("dd/MM/yyyy");
 		
-	public static final String TODAY = LocalDate.now().toString();
+	public static final String TODAY_HUMAN = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+	public static final String TODAY_SQL = LocalDate.now().toString();
 		
 	private LocalDate date;
 	
@@ -39,7 +44,7 @@ public class DBDate {
 	}
 	
 	public void addDays(int days) {
-		date.plusDays(days);
+		date = date.plusDays(days);
 	}
 	
 	public static DBDate todayPlus(int plus) {
