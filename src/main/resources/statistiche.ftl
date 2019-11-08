@@ -89,7 +89,7 @@
 			</tbody>
 		</table>
 
-		<p style="text-align:center; font-size: 16pt; font-weight: bold; font-style:italic">Prestiti per mese (a.s. ${AS1}/${AS2})</p>
+		<p style="text-align:center; font-size: 16pt; font-weight: bold; font-style:italic">Prestiti per mese (${AS2})</p>
 		
 		<table class="cinereo boldest" style="width:85% !important; margin:auto">
 			<thead>
@@ -104,7 +104,7 @@
 				<th>SET</th>
 				<th>OTT</th>
 				<th>NOV</th>
-				<th>DEC</th>
+				<th>DIC</th>
 			</thead>
 			<tbody>
 				<td>${prestitiGEN}</td>
@@ -118,26 +118,27 @@
 				<td>${prestitiSET}</td>
 				<td>${prestitiOTT}</td>
 				<td>${prestitiNOV}</td>
-				<td>${prestitiDEC}</td>
+				<td>${prestitiDIC}</td>
 			</tbody>
 		</table>
+		<p style="text-align:center"><b style="font-size: 14pt">*</b>: <small>il conteggio del mese corrente potrebbe essere solo parziale e soggetto a cambiamenti.</small></p>
 		<p style="font-size: 14pt; text-align:center">In totale sono stati prestati <span style="font-size: 18pt; font-weight:bold">${totPrestitiAnnoCorrente}</span> libri quest'anno.</p>
 		
 		<p style="text-align:center; font-size: 16pt; font-weight: bold; font-style:italic">TOP 10</p>
-		<table class="cinereo topten" style="width:70% !important; margin:auto">
+		<table class="cinereo topten" style="width:90% !important; margin:auto">
 			<thead>
 				<th>Top 10<br/>libri pi&ugrave; richiesti</th>
 				<th>Top 10<br/>classi pi&ugrave; attive</th>
 			</thead>
 			<tbody>
-				<td>
+				<td style="width:70%">
 					<ol>
 						<#list topLibri as libro>
 							<li>${libro}</li>
 						</#list>
 					</ol>
 				</td>
-				<td>
+				<td style="width:30%">
 					<ol>
 						<#list topClassi as classe>
 							<li>${classe}</li>

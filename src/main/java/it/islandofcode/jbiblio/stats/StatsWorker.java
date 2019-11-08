@@ -36,6 +36,8 @@ public class StatsWorker extends SwingWorker<Object, Object> {
 	private static final String STATISTICS_FILE = "statistiche.ftl";
 	private static final String RECEIPT_FILE = "ricevuta.ftl";
 	
+	private static final String[] MONTHS_SHORT = {"GEN","FEB","MAR","APR","MAG","GIU","LUG","AGO","SET","OTT","NOV","DIC"};
+	
 	private WORKTYPE work;
 	private File destination;
 	
@@ -97,12 +99,6 @@ public class StatsWorker extends SwingWorker<Object, Object> {
 		root.put("titoloOwner", DBManager.getPreferenceOwnerTitle());
 		root.put("nomeOwner", DBManager.getPreferenceOwnerName());
 		root.put("schoolName", DBManager.getPreferenceSchoolName());
-		/*
-		root.put("titoloOwner", Settings.getValue(Settings.PROPERTIES.TITOLO_RESPONSABILE));
-		root.put("nomeOwner", Settings.getValue(Settings.PROPERTIES.NOME_RESPONSABILE));
-		root.put("schoolName", Settings.getValue(Settings.PROPERTIES.NOME_SCUOLA));
-		 */
-				
 		
 		Template temp = cfg.getTemplate(template.getName());
 		
@@ -240,21 +236,20 @@ public class StatsWorker extends SwingWorker<Object, Object> {
 		int year = LocalDate.now().getYear();
 		
 		radix.put("AS2", String.valueOf(year));
-		radix.put("AS1", String.valueOf(year-1));
+		//radix.put("AS1", String.valueOf(year-1));
 		
-		//TODO sostituisci con ciclo e array nome mese
-		radix.put("prestitiGEN", DBManager.countLoanMonthYear(1,year));
-		radix.put("prestitiFEB", DBManager.countLoanMonthYear(2,year));
-		radix.put("prestitiMAR", DBManager.countLoanMonthYear(3,year));
-		radix.put("prestitiAPR", DBManager.countLoanMonthYear(4,year));
-		radix.put("prestitiMAG", DBManager.countLoanMonthYear(5,year));
-		radix.put("prestitiGIU", DBManager.countLoanMonthYear(6,year));
-		radix.put("prestitiLUG", DBManager.countLoanMonthYear(7,year));
-		radix.put("prestitiAGO", DBManager.countLoanMonthYear(8,year));
-		radix.put("prestitiSET", DBManager.countLoanMonthYear(9,year));
-		radix.put("prestitiOTT", DBManager.countLoanMonthYear(10,year));
-		radix.put("prestitiNOV", DBManager.countLoanMonthYear(11,year));
-		radix.put("prestitiDEC", DBManager.countLoanMonthYear(12,year));
+		int thismonth = LocalDate.now().getMonthValue();
+		String value = "";
+		for(int m=0; m<12; m++) {
+			if((m+1)<thismonth) {
+				value = Integer.toString(DBManager.countLoanMonthYear(m+1,year));
+			} else if((m+1)==thismonth){
+				value = DBManager.countLoanMonthYear(m+1,year)+"*";
+			} else {
+				value = "-";
+			}
+			radix.put("prestiti"+MONTHS_SHORT[m], value);
+		}
 		
 		radix.put("totPrestitiAnnoCorrente", DBManager.countLoanYear(year));
 		

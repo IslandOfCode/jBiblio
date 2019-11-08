@@ -238,8 +238,7 @@ public class AddLoan extends JFrame implements IRemoteUpdate{
 		
 		loan.setID(IDloan);		
 		
-		ConfirmLoan CL = new ConfirmLoan(loan.getID());
-		CL.setVisible(true);
+		new ConfirmLoan(client, loan);
 		
 		HttpHandler.getInstance().unregisterUI(AddLoan.this);
 		this.dispose();
